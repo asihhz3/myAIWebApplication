@@ -40,7 +40,7 @@ export class ResponseAnalyzer {
         this.buffer = []
         this.is_recieve_large_data = false
     }
-    private parseSSEData(line : string) : any | null{
+    protected parseSSEData(line : string) : any | null{
         // 过滤空行和 [DONE] 标记
         if (!line.trim() || line.trim() === 'data: [DONE]') {
             return null;
@@ -61,8 +61,8 @@ export class ResponseAnalyzer {
                 return json
             }
         }
-        else if (line.startsWith('data: ')) {
-            const jsonStr = line.slice(6); // 移除 "data: "
+        else {
+            const jsonStr = line.startsWith('data: ') ? line.slice(6) : line// 移除 "data: "
             if (jsonStr.endsWith("}")) {
                 try {
                     return JSON.parse(jsonStr);

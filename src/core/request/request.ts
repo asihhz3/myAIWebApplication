@@ -1,19 +1,25 @@
-import { AssistantTextMessage, AssistantStreamMessage, type IDialogue, type IMessage, type IStreamMessage } from "../dialog/dialog_type";
+import { AssistantTextMessage, AssistantStreamMessage, type IDialogue, type IMessage, type IAsyncMessage } from "../dialog/dialog_type";
+import { GeminiModel, type IModel } from "../model/model_type";
 
 
 export async function sendRequest(
-   model : string,
+   model : IModel,
    api_key : string,
    current_dialog : IDialogue,
-   stream : boolean
-) : Promise<IMessage | IStreamMessage | null>{
+   config : any
+) : Promise<IMessage | IAsyncMessage | null>{
+
+   if (model instanceof GeminiModel) {
+      return model.sendRequest(api_key, current_dialog)
+   }
+
    let header = new Headers();
    header.append("Authorization", api_key);
    header.append("Content-Type", "application/json");
    let body = JSON.stringify({
-      model,
-      stream,
-      messages : current_dialog.quene
+      model : model.id,
+      ...config,
+      messages : current_dialog.quene.flatMap(msg => msg.serialize())
    })
    let requestOptions : RequestInit = {
       method: 'POST',
@@ -25,7 +31,7 @@ export async function sendRequest(
    .then(response => 
       {
          if (response.body) {
-            if (stream)
+            if (config.stream)
                return new AssistantStreamMessage(response.body)
             else 
                return new AssistantTextMessage(response.body)

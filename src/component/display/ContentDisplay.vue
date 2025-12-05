@@ -3,14 +3,16 @@
     <div v-bind:class="(value as IDisplayValue).role">
         <p >{{ txt_content }}</p>
         <div>
-            <img class="img" v-if="imgs" v-for="bimg in imgs" v-bind:src="bimg"></img>
+            <img class="img" v-if="imgs" v-for="bimg in imgs.value" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
 
 <script lang="ts">
     import { type IDisplayValue } from '@/core/util/display_type';
-import { computed, isRef, type Ref } from 'vue';
+    import { computed, ref, type Ref } from 'vue';
+    import { base64ToPath, pathToBase64 } from 'image-tools'
+import { publicResource } from '@/core/util/router';
     export default {
         data() {
             return {
@@ -31,7 +33,14 @@ import { computed, isRef, type Ref } from 'vue';
                 imgs : computed(
                     () => {
                         if (this.value && this.value.base64imgs != null) {
-                            return this.value.base64imgs
+                            let imgs_arr : Ref<string[]> = ref(Array(this.value.base64imgs.length).fill(publicResource.loadingImage))
+                            this.value.base64imgs.forEach(
+                                (val, idx) => base64ToPath(val).then(
+                                    path => imgs_arr.value[idx] = path,
+                                    err => console.error(err)
+                                )
+                            )
+                            return imgs_arr
                         }
                         return null
                     }

@@ -26,12 +26,8 @@ import { GeminiModel, ModelType, type IModel } from '@/core/model/model_type';
                         type : ModelType.llm,
                         id : "grok-4-1-fast-reasoning"
                     },
-                    {
-                        name : "Gemini 2.5 flash image",
-                        type : ModelType.mix,
-                        id : "gemini-2.5-flash-image"
-                    },
-                    // new GeminiModel("gemini-3-pro-image", "gemini-3-pro-image")
+                    new GeminiModel("Gemini 2.5 flash image", "gemini-2.5-flash-image"),
+                    new GeminiModel("gemini-3-pro-image", "gemini-3-pro-image")
                 ] as IModel[]
             }
         },

@@ -1,16 +1,23 @@
-import { ref, type Ref } from "vue"
+import { ref, unref, type Ref } from "vue"
 import { ResponseAnalyzer } from "../util/tool"
 
 
+export interface IMessageBody {
+    role : "system" | "user" | "assistant" | "_invaild",
+    content : string,
+    base64imgs : undefined | string[]
+}
+
 export interface IMessage {
     role : "system" | "user" | "assistant" | "_invaild",
+    serialize() : IMessageBody;
 }
 
 export interface ITextMessage extends IMessage {
     content : string,
 }
 
-export interface IStreamMessage extends IMessage{
+export interface IAsyncMessage extends IMessage{
     current_content : Ref<string>
     finish_reason : string | null
 }
@@ -18,6 +25,7 @@ export interface IStreamMessage extends IMessage{
 export interface IBase64IMGMessage extends IMessage{
     base64imgs : Ref<string[]>
 }
+
 
 
 export function serializeTextMessage(msg : ITextMessage) {
@@ -57,6 +65,14 @@ export class UserTextMessage implements ITextMessage {
         this.role = "user"
         this.content = content
     }
+
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : this.content,
+            base64imgs : undefined
+        }
+    }
 }
 
 export class UserMixMessage extends UserTextMessage implements IBase64IMGMessage {
@@ -64,6 +80,14 @@ export class UserMixMessage extends UserTextMessage implements IBase64IMGMessage
     constructor(content : string, imgs : string[] = []) {
         super(content)
         this.base64imgs = ref(imgs)
+    }
+
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : this.content,
+            base64imgs : unref(this.base64imgs)
+        }
     }
 }
 
@@ -74,48 +98,78 @@ export class SystemMessage implements ITextMessage {
         this.role = "system"
         this.content = content
     }
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : this.content,
+            base64imgs : undefined
+        }
+    }
 }
 
-export class AssistantTextMessage implements ITextMessage {
+export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
+    current_content : Ref<string>
     finish_reason : string | null
     constructor(
         stream : ReadableStream<Uint8Array<ArrayBuffer>>
     ) {
         this.role = "assistant"
         this.content = ""
+        this.current_content = ref(this.content)
         this.finish_reason = null
         this.read(stream.getReader())
     }
 
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : this.content
+        } as IMessageBody
+    }
+
     async read(reader : ReadableStreamDefaultReader<Uint8Array<ArrayBuffer>>) {
         const decoder = new TextDecoder("utf-8")
-        let { value, done } = await reader.read()
-        if (done) {
-            decoder.decode(undefined, {stream : false})
-            this.finish_reason = "error"
-            return
-        }
-        if (!value) {
-            console.error("unexpected error : chunk is null while readStream is unclosed")
-            this.finish_reason = "error"
-            return
-        }
-        let json = parseSSEData(decoder.decode(value, {stream : true}))
-        if (json != null) {
-            this.finish_reason = json.choices[0].finish_reason
-            this.content = json.choices[0].delta.content
-        }
-        else {
-            console.error("unexpected error : failed to parse response json")
-            this.finish_reason = "error"
-        }
+        const analyzer = new ResponseAnalyzer(new TextDecoder("utf-8"), reader)
+        analyzer.read(
+            json => {
+                if (json != null) {
+                    this.finish_reason = json.choices[0].finish_reason
+                    this.current_content.value = json.choices[0].message.content
+                    this.content = this.current_content.value
+                }
+                else {
+                    console.error("unexpected error : failed to parse response json")
+                    this.finish_reason = "error"
+                }
+            }
+        )
+        // let { value, done } = await reader.read()
+        // if (done) {
+        //     decoder.decode(undefined, {stream : false})
+        //     this.finish_reason = "error"
+        //     return
+        // }
+        // if (!value) {
+        //     console.error("unexpected error : chunk is null while readStream is unclosed")
+        //     this.finish_reason = "error"
+        //     return
+        // }
+        // let json = parseSSEData(decoder.decode(value, {stream : true}))
+        // if (json != null) {
+        //     this.finish_reason = json.choices[0].finish_reason
+        //     this.content = json.choices[0].delta.content
+        // }
+        // else {
+        //     console.error("unexpected error : failed to parse response json")
+        //     this.finish_reason = "error"
+        // }
     }
 }
 
 
-export class AssistantStreamMessage implements IStreamMessage, IBase64IMGMessage {
+export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage {
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
     current_content : Ref<string>
@@ -130,6 +184,14 @@ export class AssistantStreamMessage implements IStreamMessage, IBase64IMGMessage
         this.finish_reason = null
         this.base64imgs = ref([])
         this.read(stream.getReader())
+    }
+
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : this.content,
+            base64imgs : unref(this.base64imgs)
+        }
     }
 
 

@@ -91,12 +91,13 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
                 }
                 let user_key = this.user_list.list.find(pair => pair.user == this.user_selected)!.key
                 let user_message = (this.$refs.param as IParamPanel).createMessage()
+                let user_config = (this.$refs.param as IParamPanel).createConfig()
                 if (user_message == null) {
                     alert("message has not ready")
                     return
                 }
                 this.dialog.quene.push(user_message)
-                sendRequest(this.model_selected.id, user_key, this.dialog, true).then(
+                sendRequest(this.model_selected, user_key, this.dialog, user_config).then(
                     msg => {
                         if (msg) {
                             this.dialog.quene.push(msg)

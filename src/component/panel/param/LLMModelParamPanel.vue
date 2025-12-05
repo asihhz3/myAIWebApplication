@@ -1,6 +1,21 @@
 
 <template>
     <div id = "model_param_main">
+        Option:
+        <div>
+            stream:
+            <span v-for="val in ['true', 'false']">
+                <input type="radio" name="stream" v-bind:value="val" v-model="stream">{{ val }}</input>
+            </span>
+        </div>
+        <div>
+            temperature:
+            <input type="range" max="100" min="0" v-model="temperature_rate">{{ temperature_rate / 100 }}</input>
+        </div>
+        <div>
+            top p:
+            <input type="range" max="100" min="0" v-model="top_p_rate">{{ top_p_rate / 100 }}</input>
+        </div>
         Input :
         <br></br>
         <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
@@ -13,7 +28,10 @@ import { SystemMessage, UserTextMessage, type IMessage } from '@/core/dialog/dia
     export default {
         data() {
             return {
-                user_input : ""
+                user_input : "",
+                stream : "true",
+                temperature_rate : 60,
+                top_p_rate : 100
             }
         },
         methods : {
@@ -22,8 +40,15 @@ import { SystemMessage, UserTextMessage, type IMessage } from '@/core/dialog/dia
             },
             createSystemMessage() : IMessage {
                 return new SystemMessage(this.user_input)
+            },
+            createConfig() : any {
+                return {
+                    stream : this.stream == "true",
+                    temperature : this.temperature_rate / 100,
+                    top_p : this.top_p_rate / 100,
+                }
             }
-        }
+        },
     }
 </script>
 

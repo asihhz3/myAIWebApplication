@@ -90,24 +90,25 @@ function test2() {
    test2_header.append("Connection", "keep-alive")
 
    var raw = JSON.stringify({
-   "contents": [
-      {
-         "role": "user",
-         "parts": [
-            {
-               "text": "Create a picture of a nano banana dish in a fancy restaurant with a Gemini theme"           }
-         ]
-      }
-   ],
-   "generationConfig": {
-      "responseModalities": [
-         "IMAGE"
+    "contents": [
+         {
+            "role": "user",
+            "parts": [
+               {
+                  "text": "'Maintain the character features in the image to generate a new portrait photo: a woman leaning on a wooden railing of a traditional Chinese building. She is wearing a blue cheongsam with pink and red floral motifs and a headdress made of colorful flowers, including roses and lilacs. Her right hand gently touches a large kite with a blue background, decorated with pink fish motifs and a pair of large eyes. The background is the interior of an old wooden building, dimly lit and cozy. The painting style is realistic, focusing on the textural details of the clothing patterns, floral headdresses, and wooden buildings"
+               }
+            ]
+         }
       ],
-      "imageConfig": {
-         "aspectRatio": "9:16"
+      "generationConfig": {
+         "responseModalities": [
+               "IMAGE"
+         ],
+         "imageConfig": {
+               "aspectRatio": "9:16"
+         }
       }
-   }
-});
+   });
 
    const test2_option = {
       method: 'POST',
@@ -115,7 +116,7 @@ function test2() {
       body: raw,
       redirect: 'follow'
    };
-    fetch("https://api.cometapi.com/v1beta/models/gemini-3-pro-image:generateContent", test2_option)
+    fetch("https://api.cometapi.com/v1beta/models/gemini-2.5-flash-image:streamGenerateContent", test2_option)
     .then(
             async (response) => {
                console.log(response)

@@ -9,22 +9,25 @@
             Image :
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
         </span>
-        <div v-if="imgs_input.length > 0">
+        <div v-if="imgs_preview.length > 0">
             preview:
             <br></br>
-            <img class = "img_preview" v-for="bimg in imgs_input" v-bind:src="bimg"></img>
+            <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
 
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
+import { publicResource } from '@/core/util/router';
+import { base64ToPath } from 'image-tools';
 
     export default {
         data() {
             return {
                 user_input : "",
                 imgs_input : [] as string[],
+                imgs_preview : [] as string[],
                 ready : true
             }
         },
@@ -33,7 +36,7 @@ import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dial
                 if (event.target != null && "files" in event.target) {
                     this.ready = false
                     let files = event.target.files as File[]
-                    this.imgs_input = Array(files.length).fill("loading.jpg")
+                    this.imgs_preview = new Array(files.length).fill(publicResource.loadingImage)
                     this.loadImgFileAsBase64(files)
                 }
             },
@@ -49,16 +52,24 @@ import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dial
                 }
                 return new Promise(async () => {
                     const reader = new FileReader();
-                    const len = files.length < this.imgs_input.length ? files.length : this.imgs_input.length
-                    if (files.length != this.imgs_input.length) {
-                        console.warn("result buffer size isn't eq to files arr")
-                    }
-                    for(let idx = 0; idx < len; idx++) {
+                    this.imgs_input = Array(files.length)
+                    for(let idx = 0; idx < files.length; idx++) {
                         let base64_str = await loadfile(reader, files[idx]!)
                         this.imgs_input[idx] = base64_str
                     }
+                    this.imgs_input.forEach(
+                        (val,idx) => base64ToPath(val).then(
+                            path => this.imgs_preview[idx] = path,
+                            err => console.error(err)
+                        )
+                    )
                     this.ready = true
                 });
+            },
+
+            createConfig() : any {
+                return {
+                }
             },
             createMessage() : IMessage | null {
                 if (this.ready)
