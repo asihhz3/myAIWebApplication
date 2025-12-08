@@ -44,8 +44,8 @@ import { reactive, ref, toRef, type Ref } from "vue";
 <style scoped>
 #dialog_display {
     width: 100%;
-    min-height: 100px;
-    height: 300px;
+    min-height: 200px;
+    height: 600px;
     overflow-y: auto;
     position: relative;
     padding: 10px;
