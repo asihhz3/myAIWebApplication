@@ -14,8 +14,10 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "@types/viewerjs": "^0.7.2",
     "image-tools": "^1.4.0",
     "uuid-js": "^0.7.5",
+    "viewerjs": "^1.11.7",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },

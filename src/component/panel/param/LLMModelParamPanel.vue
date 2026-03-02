@@ -1,7 +1,7 @@
 
 <template>
-    <div id = "model_param_main">
-        Option:
+    <div id = "llm_model_param_main">
+        Config
         <div>
             stream:
             <span v-for="val in ['true', 'false']">
@@ -53,7 +53,7 @@ import { SystemMessage, UserTextMessage, type IMessage } from '@/core/dialog/dia
 </script>
 
 <style scoped>
-    #model_param_main {
+    #llm_model_param_main {
         border: 1px dotted aquamarine;
         margin: 20px 10px;
         padding: 2% 1%;

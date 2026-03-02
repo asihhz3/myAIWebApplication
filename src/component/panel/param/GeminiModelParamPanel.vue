@@ -1,10 +1,45 @@
 
+
 <template>
-    <div id = "mix_model_param_main">
+    <div id = "gemini_model_param_main">
         Input :
         <br></br>
         <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
         <br></br>
+        Config : 
+        <div>
+            <span>
+                aspectRatio
+                <select v-model="aspect_ratio_option">
+                    <option  value="1:1">1:1</option>
+                    <option  value="2:3">2:3</option>
+                    <option  value="3:2">3:2</option>
+                    <option  value="3:4">3:4</option>
+                    <option  value="4:3">4:3</option>
+                    <option  value="16:9">16:9</option>
+                    <option  value="9:16">9:16</option>
+                </select>
+            </span>
+            <span>
+                size
+                <select v-model="size_option">
+                    <option  value="1k">1k</option>
+                    <option  value="2k">2k</option>
+                    <option  value="4k">4k</option>
+                </select>
+            </span>
+            <div>
+                ouput: 
+                <span>
+                    text
+                    <input type="checkbox" value="TEXT" @change="set_ouput_option" checked />
+                </span>
+                <span>
+                    image
+                    <input type="checkbox" value="IMAGE" @change="set_ouput_option" checked />
+                </span>
+            </div>
+        </div>
         <span>
             Image :
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
@@ -29,6 +64,9 @@ import { base64ToPath } from 'image-tools';
                 user_input : "",
                 imgs_input : [] as string[],
                 imgs_preview : [] as string[],
+                aspect_ratio_option : "1:1",
+                size_option : "1k",
+                ouput_option : { TEXT : true, IMAGE : true},
                 ready : true
             }
         },
@@ -39,6 +77,16 @@ import { base64ToPath } from 'image-tools';
                     let files = event.target.files as File[]
                     this.imgs_preview.concat(new Array(files.length).fill(publicResource.loadingImage))
                     this.loadImgFileAsBase64(files)
+                }
+            },
+            set_ouput_option (event: Event) {
+                interface CheckBox {
+                    value : string
+                    checked : boolean
+                }
+                let check_box = event.target as unknown as CheckBox
+                for (const opt of Object.keys(this.ouput_option) as Array<keyof typeof this.ouput_option> ) {
+                    this.ouput_option[opt] = check_box.checked
                 }
             },
             selected_imgs_clear() : void {
@@ -71,7 +119,18 @@ import { base64ToPath } from 'image-tools';
             },
 
             createConfig() : any {
+                let responseModalities = [] as string[]
+                for (const opt of Object.keys(this.ouput_option) as Array<keyof typeof this.ouput_option> ) {
+                    if (this.ouput_option[opt]) {
+                        responseModalities.push(opt)
+                    }
+                }
                 return {
+                    responseModalities : responseModalities,
+                    imageConfig: {
+                        aspectRatio: this.aspect_ratio_option,
+                        imageSize: this.size_option,
+                    }
                 }
             },
             createMessage() : IMessage | null {
@@ -90,7 +149,7 @@ import { base64ToPath } from 'image-tools';
 </script>
 
 <style scoped>
-    #mix_model_param_main {
+    #gemini_model_param_main {
         border: 1px dotted aqua;
         margin: 20px 10px;
         padding: 2% 1%;

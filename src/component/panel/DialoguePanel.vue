@@ -35,6 +35,8 @@ import DialogueDisplay from '../display/DialogueDisplay.vue';
 import type { IParamPanel } from '@/core/util/component_type';
 import { type IModel,  ModelType } from '@/core/model/model_type';
 import MixModelParamPanel from './param/MixModelParamPanel.vue';
+import GeminiModelParamPanel from './param/GeminiModelParamPanel.vue';
+import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -65,6 +67,10 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
                     switch (this.model_selected.type) {
                         case ModelType.llm:
                             return "LLMModelParamPanel"
+                        case ModelType.gemini_image:
+                            return "GeminiModelParamPanel"
+                        case ModelType.video:
+                            return "VideoModelParamPanel"
                         case ModelType.mix:
                         default:
                             return "MixModelParamPanel"
@@ -93,11 +99,11 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
                 let user_message = (this.$refs.param as IParamPanel).createMessage()
                 let user_config = (this.$refs.param as IParamPanel).createConfig()
                 if (user_message == null) {
-                    alert("message has not ready")
                     return
                 }
                 this.dialog.quene.push(user_message)
-                sendRequest(this.model_selected, user_key, this.dialog, user_config).then(
+                this.model_selected.sendRequest(user_key, this.dialog, user_config).then(
+                // sendRequest(this.model_selected, user_key, this.dialog, user_config).then(
                     msg => {
                         if (msg) {
                             this.dialog.quene.push(msg)
@@ -120,6 +126,7 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
                     return
                 }
                 this.dialog.quene.push(user_message)
+                console.log(this.dialog.quene)
             },
 
             systemOrder() {
@@ -131,7 +138,9 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
             "ModelSelect" : ModelSelect,
             "LLMModelParamPanel" : LLMModelParamPanel,
             "MixModelParamPanel" : MixModelParamPanel,
-            "DialogueDisplay" : DialogueDisplay
+            "GeminiModelParamPanel" : GeminiModelParamPanel,
+            "VideoModelParamPanel" : VideoModelParamPanel,
+            "DialogueDisplay" : DialogueDisplay,
         }
     }
 </script>

@@ -1,20 +1,23 @@
 import { ref, unref, type Ref } from "vue"
-import { ResponseAnalyzer } from "../util/tool"
+import { IdGenerator2, ResponseAnalyzer } from "../util/tool"
 
 
 export interface IMessageBody {
     role : "system" | "user" | "assistant" | "_invaild",
     content : string,
-    base64imgs : undefined | string[]
+    base64imgs? : string[],
+    imgs_url? : string[],
+    video?: string
 }
 
 export interface IMessage {
+    id : string,
     role : "system" | "user" | "assistant" | "_invaild",
     serialize() : IMessageBody;
 }
 
 export interface ITextMessage extends IMessage {
-    content : string,
+    content : string
 }
 
 export interface IAsyncMessage extends IMessage{
@@ -25,6 +28,13 @@ export interface IAsyncMessage extends IMessage{
 export interface IBase64IMGMessage extends IMessage{
     base64imgs : Ref<string[]>
 }
+
+export interface IUrlIMGMessage extends IMessage{
+    imgs_url : Ref<string[]>
+}
+ export interface IVideoMesasage extends IMessage {
+    video_url : Ref<string>
+ }
 
 
 
@@ -58,10 +68,13 @@ function parseSSEData(line : string) : any | null{
   return null;
 }
 
+
 export class UserTextMessage implements ITextMessage {
+    id : string
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
-    constructor(content : string, imgs : string[] = []) {
+    constructor(content : string) {
+        this.id = IdGenerator2()
         this.role = "user"
         this.content = content
     }
@@ -70,7 +83,7 @@ export class UserTextMessage implements ITextMessage {
         return {
             role : this.role,
             content : this.content,
-            base64imgs : undefined
+            base64imgs : undefined,
         }
     }
 }
@@ -92,9 +105,11 @@ export class UserMixMessage extends UserTextMessage implements IBase64IMGMessage
 }
 
 export class SystemMessage implements ITextMessage {
+    id : string
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
     constructor(content : string) {
+        this.id = IdGenerator2()
         this.role = "system"
         this.content = content
     }
@@ -108,6 +123,7 @@ export class SystemMessage implements ITextMessage {
 }
 
 export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
+    id : string
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
     current_content : Ref<string>
@@ -115,6 +131,7 @@ export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
     constructor(
         stream : ReadableStream<Uint8Array<ArrayBuffer>>
     ) {
+        this.id = IdGenerator2()
         this.role = "assistant"
         this.content = ""
         this.current_content = ref(this.content)
@@ -145,31 +162,12 @@ export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
                 }
             }
         )
-        // let { value, done } = await reader.read()
-        // if (done) {
-        //     decoder.decode(undefined, {stream : false})
-        //     this.finish_reason = "error"
-        //     return
-        // }
-        // if (!value) {
-        //     console.error("unexpected error : chunk is null while readStream is unclosed")
-        //     this.finish_reason = "error"
-        //     return
-        // }
-        // let json = parseSSEData(decoder.decode(value, {stream : true}))
-        // if (json != null) {
-        //     this.finish_reason = json.choices[0].finish_reason
-        //     this.content = json.choices[0].delta.content
-        // }
-        // else {
-        //     console.error("unexpected error : failed to parse response json")
-        //     this.finish_reason = "error"
-        // }
     }
 }
 
 
 export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage {
+    id : string
     role : "system" | "user" | "assistant" | "_invaild"
     content : string
     current_content : Ref<string>
@@ -179,6 +177,7 @@ export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage 
         stream : ReadableStream<Uint8Array<ArrayBuffer>>
     ) {
         this.role = "assistant"
+        this.id = IdGenerator2()
         this.current_content = ref("")
         this.content = this.current_content.value
         this.finish_reason = null
@@ -202,67 +201,45 @@ export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage 
                 if (json == null) {
                     return
                 }
-                if (json.choices.length > 0 && json.choices[0].finish_reason != null) {
-                    console.log("finish")
-                    this.finish_reason = json.choices[0].finish_reason
+                interface LLMResponse {
+                    choices : 
+                        {
+                            delta?: 
+                            {
+                                content : string
+                            },
+                            finish_reason?: string,
+                        }[],
+                        usage?: {
+                            total_tokens : string
+                        }
                 }
-                else if(json.usage != null) {
-                    console.log(`total usage: ${json.usage.total_tokens}`)
+                const obj = json as LLMResponse
+                if(obj.choices.length == 0) {
+                }
+                else if (obj.choices.length > 0 && obj.choices[0]!.finish_reason) {
+                    console.log("finish")
+                    this.finish_reason = obj.choices[0]!.finish_reason
+                }
+                else if(obj.usage != null) {
+                    console.log(`total usage: ${obj.usage.total_tokens}`)
                 }
                 else {
-                    if ((json.choices[0].delta.content as string).startsWith("![image]")) {
-                        this.base64imgs.value.push((json.choices[0].delta.content as string).slice(9,-1))
-                    }
-                    else if ((json.choices[0].delta.content as string).length < 0x1000){
-                        this.current_content.value += json.choices[0].delta.content
-                    }
-                    else {
-                        this.current_content.value += "<...>"
-                        console.error("response string out of range")
+                    if (obj.choices[0]!.delta) {
+                        if (obj.choices[0]!.delta && obj.choices[0]?.delta.content.startsWith("![image]")) {
+                            this.base64imgs.value.push((json.choices[0].delta.content as string).slice(9,-1))
+                        }
+                        else if (obj.choices[0]!.delta.content.length < 0x1000){
+                            this.current_content.value += json.choices[0].delta.content
+                        }
+                        else {
+                            this.current_content.value += "<...>"
+                            console.error("response string out of range")
+                        }
                     }
                 }
             }
         )
-        // while(true) {
-        //     let { value, done } = await reader.read()
-        //     if (done) {
-        //         decoder.decode(undefined, {stream : false})
-        //         break
-        //     }
-        //     if (!value) {
-        //         console.error("unexpected error : chunk is null while readStream is unclosed")
-        //         this.finish_reason = "error"
-        //         break
-        //     }
-        //     decoder.decode(value, { stream: true }).split('\n').forEach(
-        //         line => {
-        //             let json = parseSSEData(line)
-        //             if (json == null) {
-        //                 return
-        //             }
-        //             if (json.choices.length > 0 && json.choices[0].finish_reason != null) {
-        //                 console.log("finish")
-        //                 this.finish_reason = json.choices[0].finish_reason
-        //             }
-        //             else if(json.usage != null) {
-        //                 console.log(`total usage: ${json.usage.total_tokens}`)
-        //             }
-        //             else {
-        //                 if ((json.choices[0].delta.content as string).startsWith("![image]")) {
-        //                     this.base64imgs.value.push((json.choices[0].delta.content as string).slice(9,-2))
-        //                 }
-        //                 else if ((json.choices[0].delta.content as string).length < 0x1000){
-        //                     this.current_content.value += json.choices[0].delta.content
-        //                 }
-        //                 else {
-        //                     this.current_content.value += "<...>"
-        //                     console.error("response string out of range")
-        //                 }
-        //             }
-        //         }
-        //     )
-        // }
-        // this.content = this.current_content.value
     }
 }
 

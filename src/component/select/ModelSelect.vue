@@ -4,30 +4,27 @@
         v-model="selected"  
         @change="$emit('model-update', selected)"
     >
-        <option v-for="api in llm_api_list" v-bind:value="api">{{ api.name }}</option>
+        <option v-for="api in model_api_list" v-bind:value="api">{{ api.name }}</option>
     </select>
 </template>
 
 <script lang="ts">
-import { GeminiModel, ModelType, type IModel } from '@/core/model/model_type';
+import { AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel } from '@/core/model/model_type';
 
+    const chat_model_base_url = "https://api.cometapi.com/v1/chat/completions"
+    const image_model_base_url = "https://api.cometapi.com/v1/images/generations"
+    const grok_video_model_base_url = "https://api.cometapi.com/grok/v1/videos"
     export default {
         data() {
             return {
                 selected : null as IModel | null,
-                llm_api_list : [
-                    {
-                        name : "GPT-5.1",
-                        type : ModelType.llm,
-                        id : "gpt-5.1"
-                    },
-                    {
-                        name : "Grok 4.1 Fast Reasoning",
-                        type : ModelType.llm,
-                        id : "grok-4-1-fast-reasoning"
-                    },
+                model_api_list : [
+                    new LLMModel("GPT-5.1", "gpt-5.1", chat_model_base_url),
+                    new LLMModel("Grok 4.1 Fast Reasoning", "grok-4-1-fast-reasoning", chat_model_base_url),
                     new GeminiModel("Gemini 2.5 flash image", "gemini-2.5-flash-image"),
-                    new GeminiModel("gemini-3-pro-image", "gemini-3-pro-image")
+                    new GeminiModel("gemini-3-pro-image-preview", "gemini-3-pro-image-preview"),
+                    new AImageModel("DouBao Seedream 4.5", "doubao-seedream-4-5-251128", image_model_base_url),
+                    new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", grok_video_model_base_url)
                 ] as IModel[]
             }
         },

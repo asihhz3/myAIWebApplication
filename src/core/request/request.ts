@@ -1,5 +1,5 @@
 import { AssistantTextMessage, AssistantStreamMessage, type IDialogue, type IMessage, type IAsyncMessage } from "../dialog/dialog_type";
-import { GeminiModel, type IModel } from "../model/model_type";
+import { AImageModel, GeminiModel, type IModel } from "../model/model_type";
 
 
 export async function sendRequest(
@@ -10,6 +10,9 @@ export async function sendRequest(
 ) : Promise<IMessage | IAsyncMessage | null>{
 
    if (model instanceof GeminiModel) {
+      return model.sendRequest(api_key, current_dialog)
+   }
+   else if (model instanceof AImageModel) {
       return model.sendRequest(api_key, current_dialog)
    }
 
@@ -27,7 +30,7 @@ export async function sendRequest(
       body: body,
       redirect: 'follow'
    };
-   return fetch("https://api.cometapi.com/v1/chat/completions", requestOptions)
+   return fetch("", requestOptions)
    .then(response => 
       {
          if (response.body) {

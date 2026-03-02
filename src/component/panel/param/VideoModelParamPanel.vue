@@ -1,10 +1,28 @@
 
 <template>
-    <div id = "mix_model_param_main">
+    <div id = "video_model_param_main">
         Input :
         <br></br>
         <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
         <br></br>
+        <div>
+            Config : 
+            <div>
+                aspectRatio
+                <select v-model="aspect_ratio">
+                    <option value="shouldn't be defined">shouldn't be defined</option>
+                    <option value="1:1">1:1</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:4">3:4</option>
+                    <option value="16:9">16:9</option>
+                    <option value="9:16">9:16</option>
+                </select>
+            </div>
+            <div>
+                duration 
+                <input type="text" v-model="duration" @change="check_duration"/>
+            </div>
+        </div>
         <span>
             Image :
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
@@ -29,6 +47,8 @@ import { base64ToPath } from 'image-tools';
                 user_input : "",
                 imgs_input : [] as string[],
                 imgs_preview : [] as string[],
+                duration : "8",
+                aspect_ratio : "shouldn't be defined",
                 ready : true
             }
         },
@@ -70,8 +90,16 @@ import { base64ToPath } from 'image-tools';
                 });
             },
 
+            check_duration(e : Event) {
+                const _duration = Number.parseInt(this.duration)
+                if (Number.isNaN(_duration) || _duration < 1 || _duration > 16) {
+                    this.duration = "8"
+                }
+            },
             createConfig() : any {
                 return {
+                    duration : Number.parseInt(this.duration),
+                    aspect_ratio : this.aspect_ratio == "shouldn't be defined" ? null : this.aspect_ratio
                 }
             },
             createMessage() : IMessage | null {
@@ -90,7 +118,7 @@ import { base64ToPath } from 'image-tools';
 </script>
 
 <style scoped>
-    #mix_model_param_main {
+    #video_model_param_main {
         border: 1px dotted aqua;
         margin: 20px 10px;
         padding: 2% 1%;

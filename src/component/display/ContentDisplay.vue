@@ -1,9 +1,21 @@
 
 <template>
     <div v-bind:class="(value as IDisplayValue).role">
-        <p >{{ txt_content }}</p>
         <div>
-            <img class="img" v-if="imgs" v-for="bimg in imgs.value" v-bind:src="bimg"></img>
+            <p v-bind:hidden="is_edit_mode">{{ txt_content }}</p>
+            <textarea wrap="soft" v-model="edit_content" :hidden="!is_edit_mode" style="width: 90%;"></textarea>
+        </div>
+        <div id="content_images">
+            <img class="img" v-if="imgs" v-for="(bimg, idx) in imgs" :key="idx" :src="bimg.value" ></img>
+        </div>
+        <video v-if="value && value.video_url" controls>
+            <source v-bind:src="value.video_url" type="video/mp4" />
+        </video>
+        <div>
+            <input type="button" value="delete" @click="$emit('delete_message', value!.message_id)" />
+            <input type="button" value="edit" @click="switch_edit_mode" :hidden="txt_content.length == 0 || is_edit_mode"/>
+            <input type="button" value="cancle" @click="abandon_changes" :hidden="!is_edit_mode"/>
+            <input type="button" value="save" @click="save_changes" :hidden="!is_edit_mode"/>
         </div>
     </div>
 </template>
@@ -13,6 +25,7 @@
     import { computed, ref, type Ref } from 'vue';
     import { base64ToPath, pathToBase64 } from 'image-tools'
 import { publicResource } from '@/core/util/router';
+import Viewer from 'viewerjs';
     export default {
         data() {
             return {
@@ -32,28 +45,60 @@ import { publicResource } from '@/core/util/router';
                 ),
                 imgs : computed(
                     () => {
-                        if (this.value && this.value.base64imgs != null) {
-                            let imgs_arr : Ref<string[]> = ref(Array(this.value.base64imgs.length).fill(publicResource.loadingImage))
-                            this.value.base64imgs.forEach(
-                                (val, idx) => base64ToPath(val).then(
-                                    path => imgs_arr.value[idx] = path,
-                                    err => console.error(err)
+                        if (this.value) {
+                            const imgs_url_beg = (this.value.base64imgs ? this.value.base64imgs.length : 0)
+                            const size =    
+                                (this.value.imgs_url ? this.value.imgs_url.length : 0) + imgs_url_beg
+                            let imgs_arr : Ref<string>[]= Array(size).fill(ref(publicResource.loadingImage))
+                            if (this.value.base64imgs) {
+                                this.value.base64imgs.forEach(
+                                    (val, idx) => base64ToPath(val).then(
+                                        path => imgs_arr[idx]!.value = path,
+                                        err => console.error(err)
+                                    )
                                 )
-                            )
+                            }
+                            if (this.value.imgs_url) {
+                                this.value.imgs_url.forEach(
+                                    (val, idx) => imgs_arr[idx + imgs_url_beg]!.value = val
+                                )
+                            }
                             return imgs_arr
                         }
                         return null
                     }
-                )
+                ),
+                is_edit_mode : ref(false),
+                edit_content : this.value && typeof this.value.content == "string" ? this.value.content : "",
+                img_gallery : null as null | Viewer
             }
         },
+        methods : {
+            switch_edit_mode() {
+                this.is_edit_mode = true
+            },
+            abandon_changes() {
+                this.edit_content = this.value && typeof this.value.content == "string" ? this.value.content : ""
+                this.is_edit_mode = false
+            },
+            save_changes() {
+                if (this.value) {
+                    this.value.content = this.edit_content
+                }
+                this.is_edit_mode = false
+            },
+        },
         watch : {
-            imgs : function(newval) {
-            }
         },
         props : {
             value : Object as () => IDisplayValue
         },
+        mounted() {
+        },
+        beforeUnmount() {
+            this.img_gallery?.destroy()
+            this.img_gallery = null
+        }
     }
 </script>
 

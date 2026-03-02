@@ -1,7 +1,7 @@
-import { ref, unref, type Ref } from "vue";
-import type { IDialogue, IMessage, IMessageBody, IAsyncMessage, IBase64IMGMessage, ITextMessage } from "../dialog/dialog_type";
+import { reactive, ref, toRef, unref, type Ref } from "vue";
+import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
-import { ResponseAnalyzer} from "../util/tool";
+import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
 
 
 export enum ModelType {
@@ -9,13 +9,212 @@ export enum ModelType {
     txt2img,
     img2img,
     mix,
-    gemini_image
+    video,
+    gemini_image,
 }
 
 export interface IModel {
+    base_url : string,
     name : string,
     type : ModelType,
+    id : string,
+    sendRequest : (api_key: string, current_dialog: IDialogue, config?: object) => Promise<IMessage | IAsyncMessage | null>
+}
+
+export class LLMModel implements IModel {
+    base_url : string
+    name : string
+    type : ModelType
     id : string
+    constructor(actual_name :string, actual_id : string, base_url : string) {
+        this.name = actual_name;
+        this.type = ModelType.llm,
+        this.id = actual_id
+        this.base_url = base_url
+    }
+
+    async sendRequest(
+        api_key : string,
+        current_dialog : IDialogue,
+        config? : object
+    ) : Promise<IMessage | IAsyncMessage | null>{
+        let header = new Headers();
+        header.append("Authorization", api_key);
+        header.append("Content-Type", "application/json");
+        let body = JSON.stringify({
+            model : this.id,
+            ...config,
+            messages : current_dialog.quene.flatMap(msg => msg.serialize())
+        })
+        let requestOptions : RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: body,
+            redirect: 'follow'
+        };
+        return fetch(this.base_url, requestOptions)
+        .then(response => 
+            {
+                if (response.body) {
+                    if (config && "stream" in config && typeof config.stream == "boolean" && config.stream)
+                        return new AssistantStreamMessage(response.body)
+                    else 
+                        return new AssistantTextMessage(response.body)
+                }
+                else
+                    return null
+            }
+        ).then(
+            msg => {
+                if (msg) {
+                    if(msg.finish_reason == "error") {
+                    return Promise.reject("")
+                    }
+                }
+                return msg;
+            }
+        ).catch(error => {
+                console.error('error', error)
+                return null;
+            }
+        );
+    }
+
+}
+
+export class XAiAssistantMessage implements IVideoMesasage {
+    id : string
+    video_url : Ref<string>
+    constructor(url : Ref<string>) {
+        this.id = IdGenerator2()
+        this.video_url = url
+    }
+    get role() : "system" | "user" | "assistant" | "_invaild" {
+        return "assistant"
+    }
+    set role(role : "system" | "user" | "assistant" | "_invaild") {
+    }
+    
+    serialize(): IMessageBody {
+        return reactive(
+            {
+                role : "assistant",
+                content : "",
+                video : this.video_url
+            }
+        )
+    }
+
+}
+
+export class XAiVideoModel implements IModel {
+    base_url : string
+    name : string
+    type : ModelType
+    id : string
+    constructor(actual_name :string, actual_id : string, base_url : string) {
+        this.name = actual_name;
+        this.type = ModelType.video,
+        this.id = actual_id
+        this.base_url = base_url
+    }
+    
+    private async get_video(json : any, api_key : string, video_url_ref : Ref<string>) {
+        const geration_response = json as { request_id : string}
+        const get_request_headers = new Headers()
+        get_request_headers.append("Authorization", api_key)
+        const get_request_option = {
+            method: 'GET',
+            headers: get_request_headers,
+            redirect: 'follow'
+        }
+        await fetch(
+            `${this.base_url}/${geration_response.request_id}`,
+        )
+    }
+
+    async sendRequest(
+        api_key : string,
+        current_dialog : IDialogue,
+        config? : object
+    ) : Promise<IMessage | IAsyncMessage | null>{
+        let header = new Headers();
+        header.append("Authorization", api_key);
+        header.append("Content-Type", "application/json");
+        header.append('Accept', '*/*')
+        header.append('Connection',' keep-alive')
+        const message_body = current_dialog.quene[current_dialog.quene.length - 1]!.serialize()
+        let body = JSON.stringify({
+            model : this.id,
+            prompt : message_body.content,
+            image :  message_body.base64imgs && message_body.base64imgs.length > 0
+             ? { url : message_body.base64imgs[0] } : undefined,
+            ...config
+        })
+        let requestOptions : RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: body,
+            redirect: 'follow'
+        };
+        const video_url_ref = ref("")
+        fetch(`${this.base_url}/generations`, requestOptions)
+        .then(response => 
+            {
+                return response.json()
+            }
+        ).then(
+            json => {
+                const geration_response = json as { request_id : string}
+                return geration_response.request_id
+            }
+        ).then(
+            async request_id => {
+                const get_request_headers = new Headers()
+                get_request_headers.append("Authorization", api_key)
+                const get_request_option = {
+                    method: 'GET',
+                    headers: get_request_headers,
+                    redirect: "follow" as RequestRedirect
+                }
+                const request_func_id = setInterval(
+                    async () => {
+                        const req = await fetch(
+                            `${this.base_url}/${request_id}`,
+                            get_request_option
+                        )
+                        const req_body = await req.json() as {
+                            data : {
+                                failed_reason : string,
+                                status : string,
+                                data : {
+                                    video : {
+                                        url : string,
+                                        duration : number
+                                    }
+                                }
+                            }
+                        }
+                        if (req_body.data.status == "SUCCESS") {
+                            video_url_ref.value = req_body.data.data.video.url
+                            clearTimeout(request_func_id)
+                        }
+                        if (req_body.data.status == "FAILURE") {
+                            clearTimeout(request_func_id)
+                            return Promise.reject(`generation failed : ${req_body.data.failed_reason}`)
+                        }
+                    },
+                    1000
+                )
+            }
+        ).catch(error => {
+                console.error('error', error)
+                return null;
+            }
+        )
+        return new XAiAssistantMessage(video_url_ref)
+    }
+
 }
 
 interface IGeminiMessageParts {
@@ -27,6 +226,7 @@ interface IGeminiMessageBody {
     role: "user" | "model" | "_invaild",
     parts : IGeminiMessageParts[]
 }
+
 
 function gRoleToRole(role : "user" | "model" | "_invaild") :  "system" | "user" | "assistant" | "_invaild"{
     switch (role) {
@@ -99,6 +299,7 @@ function gmBodyToMBody(msg_body : IGeminiMessageBody) : IMessageBody {
 
 
 class GeminiMessage implements IMessage{
+    id : string
     get role() : "system" | "user" | "assistant" | "_invaild"{
         return gRoleToRole(this.actual_role)
     }
@@ -111,6 +312,7 @@ class GeminiMessage implements IMessage{
     constructor(
         role : "system" | "user" | "assistant" | "_invaild",
     ){
+        this.id = IdGenerator2()
         this.actual_role = "_invaild"
         this.role = "assistant"
     }
@@ -161,6 +363,7 @@ class GeminiResponseAnalyzer extends ResponseAnalyzer {
 }
 
 class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMessage, IBase64IMGMessage{
+    id : string
     content : string
     current_content: Ref<string, string>
     finish_reason: string | null
@@ -169,6 +372,7 @@ class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMe
         stream : ReadableStream<Uint8Array<ArrayBuffer>>
     ){
         super("assistant")
+        this.id = IdGenerator2()
         this.content = ""
         this.current_content = ref(this.content)
         this.finish_reason = null
@@ -206,7 +410,7 @@ class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMe
                 }
                 else {
                     console.error("invaild json data:")
-                    console.log(json)
+                    console.error(json)
                 }
             }
         )
@@ -221,6 +425,7 @@ class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMe
 }
 
 export class GeminiModel implements IModel {
+    base_url : string
     name : string
     type : ModelType
     id : string
@@ -228,6 +433,202 @@ export class GeminiModel implements IModel {
         this.name = actual_name;
         this.type = ModelType.gemini_image,
         this.id = actual_id
+        this.base_url = `https://api.cometapi.com/v1beta/models/${this.id}:generateContent`;
+    }
+
+    protected createMsgBody(current_dialog : IDialogue, config?: object) {
+        return JSON.stringify({
+            contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+            generationConfig : config
+        })
+    }
+
+    sendRequest(
+        api_key : string,
+        current_dialog : IDialogue,
+        config?: object
+    ) : Promise<IMessage | IAsyncMessage | null>{
+        let header = new Headers();
+        header.append("Authorization", api_key);
+        header.append("Content-Type", "application/json");
+        header.append('Accept', '*/*')
+        header.append('Connection',' keep-alive')
+        let body = JSON.stringify({
+            contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+            generationConfig : config
+        })
+        let requestOptions : RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: body,
+            redirect: 'follow'
+        }
+        return fetch(this.base_url, requestOptions)
+        .then(response => 
+            {
+                if (response.body) {
+                    return new GeminiModelMessage(response.body)
+                }
+                else {
+                    console.log(response)
+                    return Promise.reject("invalid response body")
+                }
+            }
+        ).catch(error => {
+                console.error('error', error)
+                return null;
+            }
+        );
+    }
+
+}
+
+// export class GeminiProModel extends GeminiModel{
+//     protected createMsgBody(current_dialog : IDialogue, config?: object) {
+//         return JSON.stringify({
+//             model : this.id,
+//             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+//             config : config
+//         })
+//     }
+// }
+
+export interface IAImageMessageBody {
+    model : string,
+    prompt : string,
+    size : string,
+    watermark: boolean,
+    sequential_image_generation: string,
+    sequential_image_generation_options: {
+        max_images: number,
+    }, 
+}
+
+function mBodyToImgBody(msg : IMessageBody, model : AImageModel) : IAImageMessageBody | null {
+    if (msg.content.length == 0) {
+        console.error("message shoudle be text form")
+        return null
+    }
+    let target_body = {
+        model : model.id,
+        prompt : msg.content,
+        size : '2k',
+        watermark: false,
+        sequential_image_generation: "auto",
+        sequential_image_generation_options: {
+            max_images: 4,
+        }, 
+    }
+
+    // Type guard for extended properties
+    interface ExtendedMessageBody extends IMessageBody {
+        sequential_image_generation_options?: {
+            max_images: number;
+        };
+    }
+    const extend_msg = msg as ExtendedMessageBody
+
+    if ("size" in msg && typeof msg.size == "string") {
+        target_body.size = msg.size
+    }
+    if ("watermark" in msg && typeof msg.watermark == "boolean") {
+        target_body.watermark = msg.watermark
+    }
+    if ("sequential_image_generation" in msg && typeof msg.sequential_image_generation == "string") {
+        target_body.sequential_image_generation = msg.sequential_image_generation
+    }
+    if (extend_msg.sequential_image_generation_options){
+        target_body.sequential_image_generation_options = extend_msg.sequential_image_generation_options
+    }
+    return target_body
+}
+
+// export class UserAImageMessage implements IMessage{
+//     role: "system" | "user" | "assistant" | "_invaild"
+//     content : string
+//     base64imgs : string[] | undefined
+//     size? : string
+//     watermark?: boolean
+//     sequential_image_generation?: string
+//     sequential_image_generation_options? : {
+//         max_images: number,
+//     }
+//     constructor (
+//         content : string,
+//         base64imgs : string[] | undefined
+//     ) {
+//         this.role = "user"
+//         this.content = content
+//         this.base64imgs = base64imgs
+//     }
+//     serialize(): IMessageBody {
+//         return {
+//             ...this
+//         }
+//     }
+
+// }
+
+export class AssistantAImageMessage implements IUrlIMGMessage{
+    id : string
+    role: "system" | "user" | "assistant" | "_invaild";
+    content : string
+    imgs_url: Ref<string[], string[]>
+    base64imgs: Ref<string[], string[]>
+    constructor(
+        stream : ReadableStream<Uint8Array<ArrayBuffer>>
+    ) {
+        this.id = IdGenerator2()
+        this.role = "assistant"
+        this.content = ""
+        this.imgs_url = ref([])
+        this.base64imgs = ref([])
+        new ResponseAnalyzer(new TextDecoder('utf-8'), stream.getReader()).read(
+            json => {
+
+                interface AResponse{
+                    created?: number,
+                    data: [ {url : string} ],
+                    usage : {
+                        generated_images: number
+                        output_tokens: number,
+                        total_tokens: number
+                    }
+                }
+                const response = json as AResponse
+                for (let data of response.data) {
+                    if (data.url.startsWith("data")) {
+                        this.base64imgs.value.push(data.url)
+                    }
+                    else {
+                        this.imgs_url.value.push(data.url)
+                    }
+                }
+            }
+        )
+    }
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            imgs_url : this.imgs_url.value,
+            base64imgs : this.base64imgs.value,
+            content : ""
+        }
+    }
+
+
+}
+
+export class AImageModel implements IModel {
+    base_url : string
+    name : string
+    type : ModelType
+    id : string
+    constructor(actual_name :string, actual_id : string, base_url : string) {
+        this.name = actual_name;
+        this.type = ModelType.mix,
+        this.id = actual_id
+        this.base_url = base_url
     }
 
     sendRequest(
@@ -239,20 +640,26 @@ export class GeminiModel implements IModel {
         header.append("Content-Type", "application/json");
         header.append('Accept', '*/*')
         header.append('Connection',' keep-alive')
-        let body = JSON.stringify({
-            contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize()))
-        })
+        let msg = current_dialog.quene[current_dialog.quene.length - 1]
+        if (!current_dialog.quene || !msg) {
+            return Promise.reject("lack of prompt message")
+        }
+        let msg_body = mBodyToImgBody(msg.serialize(), this)
+        if (!msg_body) {
+            return Promise.reject("failed to analyzed message")
+        }
+        let body = JSON.stringify(msg_body)
         let requestOptions : RequestInit = {
             method: 'POST',
             headers: header,
             body: body,
-            redirect: 'follow'
+            // redirect: 'follow'
         }
-        return fetch(`https://api.cometapi.com/v1beta/models/${this.id}:generateContent`, requestOptions)
+        return fetch(this.base_url, requestOptions)
         .then(response => 
             {
                 if (response.body) {
-                    return new GeminiModelMessage(response.body)
+                    return new AssistantAImageMessage(response.body)
                 }
                 else {
                     console.log(response)

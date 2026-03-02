@@ -1,3 +1,4 @@
+import uuid from "uuid-js";
 
 
 declare global {
@@ -127,6 +128,17 @@ export class ResponseAnalyzer {
             message : "normal"
         }
     }
+}
+
+export function IdGenerator1() {
+    return uuid.randomUI32().toString()
+}
+
+let counter = 0
+let base = Number.parseInt(uuid.randomUI16().toString()) << 15
+
+export function IdGenerator2() {
+    return (base + counter++).toString()
 }
 
 export default {}
