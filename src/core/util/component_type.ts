@@ -1,4 +1,5 @@
 import type { IMessage } from "../dialog/dialog_type";
+import type { IModelSource } from "../model/model_type";
 
 export interface IParamPanel {
 
@@ -6,5 +7,5 @@ export interface IParamPanel {
 
     createSystemMessage : () => IMessage,
 
-    createConfig : () => any
+    createConfig : () => any,
 }

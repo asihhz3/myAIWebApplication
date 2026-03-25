@@ -40,6 +40,8 @@
                 </span>
             </div>
         </div>
+        <div>
+        </div>
         <span>
             Image :
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
@@ -55,6 +57,7 @@
 
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
+import type { IModelSource } from '@/core/model/model_type';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
 
@@ -85,9 +88,7 @@ import { base64ToPath } from 'image-tools';
                     checked : boolean
                 }
                 let check_box = event.target as unknown as CheckBox
-                for (const opt of Object.keys(this.ouput_option) as Array<keyof typeof this.ouput_option> ) {
-                    this.ouput_option[opt] = check_box.checked
-                }
+                this.ouput_option[check_box.value as "TEXT" | "IMAGE"] = check_box.checked
             },
             selected_imgs_clear() : void {
                 this.imgs_input = []

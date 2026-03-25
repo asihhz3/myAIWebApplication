@@ -5,12 +5,21 @@
     <p class = "tips" v-else>this is a history dialog</p>
     <div>
         User name:
-        <select v-model="user_selected">
-            <option class = "dialog" v-for="pair in user_list.list">{{ pair.user }}</option>
+        <select v-model="user_selected_name">
+            <option class = "dialog" v-for="pair in user_list.list">{{ pair.name }}</option>
         </select>
         <br></br>
         Model :
         <ModelSelect @model-update="setModel"></ModelSelect>
+        <br></br>
+        Source:
+        <select v-model="model_source_selected">
+            <option class 
+            v-if="model_selected" 
+            v-for="source in source_list"
+            :value="source"
+            >{{ source.type }}</option>
+        </select>
         <br></br>
         <component v-if="param_selected" v-bind:is="param_selected" ref="param"></component>
 
@@ -24,7 +33,7 @@
 </template>
 
 <script lang="ts">
-    import { global_key_handle } from '@/core/apikey/key_handle';
+    import { global_key_handle, UserIdentity } from '@/core/apikey/key_handle';
     import { client_dialog_history } from '@/core/dialog/dialog_history';
     import { Dialogue, SystemMessage } from '@/core/dialog/dialog_type'; 
     import { computed, ref, type Ref } from 'vue';
@@ -33,7 +42,7 @@
     import LLMModelParamPanel from './param/LLMModelParamPanel.vue';
 import DialogueDisplay from '../display/DialogueDisplay.vue';
 import type { IParamPanel } from '@/core/util/component_type';
-import { type IModel,  ModelType } from '@/core/model/model_type';
+import { type IModel,  type IModelSource,  ModelType } from '@/core/model/model_type';
 import MixModelParamPanel from './param/MixModelParamPanel.vue';
 import GeminiModelParamPanel from './param/GeminiModelParamPanel.vue';
 import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
@@ -43,8 +52,9 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
         data () {
             return {
                 user_list : global_key_handle,
-                user_selected : null as string | null,
+                user_selected_name : null as string | null,
                 model_selected : null as IModel | null,
+                model_source_selected : null as IModelSource | null,
                 is_new_dialog : computed(() => new_dialog.value != null ),
                 dialog : computed(() => {
                     if (client_dialog_history.hasHistory(this.dialog_id))
@@ -77,32 +87,60 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
                     }
                 }
                 return null;
+            },
+            user_selected() {
+                return this.user_list.list.find(pair => pair.name == this.user_selected_name) || null
+            },
+            source_list() {
+                if (!this.model_selected) {
+                    return null
+                }
+                const a = this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
+                console.log(this.model_selected.source)
+                console.log(this.user_selected?.key_list)
+                return this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
             }
         },
         props : ["dialog_id"],
         methods : {
             setModel(val : IModel | null) {
-                console.log(`selected : `)
+                console.log(`source : ${this.model_source_selected}`)
+                console.log(`model : ${val}`)
                 console.log(val)
                 this.model_selected = val
+                this.model_source_selected = null
             },
             communicate() {
                 if (!this.model_selected) {
                     alert("model has not been selected!")
                     return
                 }
-                if (!this.user_selected) {
+                if (!this.user_selected_name) {
                     alert("user has not been selected!")
                     return
                 }
-                let user_key = this.user_list.list.find(pair => pair.user == this.user_selected)!.key
-                let user_message = (this.$refs.param as IParamPanel).createMessage()
-                let user_config = (this.$refs.param as IParamPanel).createConfig()
+                if (!this.user_selected) {
+                    alert("user is invaild!")
+                    return
+                }
+                if (!this.model_source_selected) {
+                    alert("no suitable source!")
+                    return
+                }
+                const user_message = (this.$refs.param as IParamPanel).createMessage()
+                // const source = (this.$refs.param as IParamPanel).getSource()
+                const user_config = (this.$refs.param as IParamPanel).createConfig()
+                const selected_api = this.user_selected.key_list.find(key_pair => key_pair.source_type == this.model_source_selected!.type)
+                if (!selected_api) {
+                    alert("no suitable api key")
+                    throw "no suitable api key"
+                }
                 if (user_message == null) {
+                    alert("message is empty")
                     return
                 }
                 this.dialog.quene.push(user_message)
-                this.model_selected.sendRequest(user_key, this.dialog, user_config).then(
+                this.model_selected.sendRequest(selected_api.key, this.dialog, this.model_source_selected, user_config).then(
                 // sendRequest(this.model_selected, user_key, this.dialog, user_config).then(
                     msg => {
                         if (msg) {
@@ -116,7 +154,7 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
                     alert("model has not been selected!")
                     return
                 }
-                if (!this.user_selected) {
+                if (!this.user_selected_name) {
                     alert("user has not been selected!")
                     return
                 }

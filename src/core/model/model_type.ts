@@ -3,6 +3,9 @@ import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, t
 import type { IImage } from "../util/assets_type";
 import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
 
+export enum ModelSourceType {
+    cometapi = "cometapi"
+}
 
 export enum ModelType {
     llm,
@@ -13,29 +16,36 @@ export enum ModelType {
     gemini_image,
 }
 
+export interface IModelSource {
+    type : ModelSourceType
+    base_url : string
+}
+
 export interface IModel {
-    base_url : string,
+    source : IModelSource[]
     name : string,
     type : ModelType,
     id : string,
-    sendRequest : (api_key: string, current_dialog: IDialogue, config?: object) => Promise<IMessage | IAsyncMessage | null>
+    sendRequest : (api_key: string, current_dialog: IDialogue, source:IModelSource, config?: object) => Promise<IMessage | IAsyncMessage | null>
 }
 
 export class LLMModel implements IModel {
-    base_url : string
+    source : IModelSource[]
     name : string
     type : ModelType
     id : string
-    constructor(actual_name :string, actual_id : string, base_url : string) {
+    constructor(actual_name :string, actual_id : string, source : IModelSource[]) {
         this.name = actual_name;
         this.type = ModelType.llm,
         this.id = actual_id
-        this.base_url = base_url
+        this.source = source
     }
+
 
     async sendRequest(
         api_key : string,
         current_dialog : IDialogue,
+        source : IModelSource,
         config? : object
     ) : Promise<IMessage | IAsyncMessage | null>{
         let header = new Headers();
@@ -52,7 +62,7 @@ export class LLMModel implements IModel {
             body: body,
             redirect: 'follow'
         };
-        return fetch(this.base_url, requestOptions)
+        return fetch(source.base_url, requestOptions)
         .then(response => 
             {
                 if (response.body) {
@@ -108,34 +118,35 @@ export class XAiAssistantMessage implements IVideoMesasage {
 }
 
 export class XAiVideoModel implements IModel {
-    base_url : string
+    source : IModelSource[]
     name : string
     type : ModelType
     id : string
-    constructor(actual_name :string, actual_id : string, base_url : string) {
+    constructor(actual_name :string, actual_id : string, source : IModelSource[]) {
         this.name = actual_name;
         this.type = ModelType.video,
         this.id = actual_id
-        this.base_url = base_url
+        this.source = source
     }
     
-    private async get_video(json : any, api_key : string, video_url_ref : Ref<string>) {
-        const geration_response = json as { request_id : string}
-        const get_request_headers = new Headers()
-        get_request_headers.append("Authorization", api_key)
-        const get_request_option = {
-            method: 'GET',
-            headers: get_request_headers,
-            redirect: 'follow'
-        }
-        await fetch(
-            `${this.base_url}/${geration_response.request_id}`,
-        )
-    }
+    // private async get_video(json : any, api_key : string, source : IModelSource,  video_url_ref : Ref<string>) {
+    //     const geration_response = json as { request_id : string}
+    //     const get_request_headers = new Headers()
+    //     get_request_headers.append("Authorization", api_key)
+    //     const get_request_option = {
+    //         method: 'GET',
+    //         headers: get_request_headers,
+    //         redirect: 'follow'
+    //     }
+    //     await fetch(
+    //         `${source.base_url}/${geration_response.request_id}`,
+    //     )
+    // }
 
     async sendRequest(
         api_key : string,
         current_dialog : IDialogue,
+        source : IModelSource,
         config? : object
     ) : Promise<IMessage | IAsyncMessage | null>{
         let header = new Headers();
@@ -158,7 +169,7 @@ export class XAiVideoModel implements IModel {
             redirect: 'follow'
         };
         const video_url_ref = ref("")
-        fetch(`${this.base_url}/generations`, requestOptions)
+        fetch(`${source.base_url}/generations`, requestOptions)
         .then(response => 
             {
                 return response.json()
@@ -180,7 +191,7 @@ export class XAiVideoModel implements IModel {
                 const request_func_id = setInterval(
                     async () => {
                         const req = await fetch(
-                            `${this.base_url}/${request_id}`,
+                            `${source.base_url}/${request_id}`,
                             get_request_option
                         )
                         const req_body = await req.json() as {
@@ -425,15 +436,16 @@ class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMe
 }
 
 export class GeminiModel implements IModel {
-    base_url : string
+    source : IModelSource[]
     name : string
     type : ModelType
     id : string
-    constructor(actual_name :string, actual_id : string) {
+    constructor(actual_name :string, actual_id : string, source : IModelSource[]) {
         this.name = actual_name;
         this.type = ModelType.gemini_image,
         this.id = actual_id
-        this.base_url = `https://api.cometapi.com/v1beta/models/${this.id}:generateContent`;
+        this.source = source
+        // this.base_url = `https://api.cometapi.com/v1beta/models/${this.id}:generateContent`;
     }
 
     protected createMsgBody(current_dialog : IDialogue, config?: object) {
@@ -446,6 +458,7 @@ export class GeminiModel implements IModel {
     sendRequest(
         api_key : string,
         current_dialog : IDialogue,
+        source : IModelSource,
         config?: object
     ) : Promise<IMessage | IAsyncMessage | null>{
         let header = new Headers();
@@ -457,13 +470,18 @@ export class GeminiModel implements IModel {
             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
             generationConfig : config
         })
+        const controller = new AbortController();
+        // 设置更长的超时时间，例如 120 秒
+        const timeoutId = setTimeout(() => controller.abort(), 120000)
         let requestOptions : RequestInit = {
             method: 'POST',
             headers: header,
             body: body,
-            redirect: 'follow'
+            redirect: 'follow',
+            signal: controller.signal,
+            keepalive: true
         }
-        return fetch(this.base_url, requestOptions)
+        return fetch(source.base_url, requestOptions)
         .then(response => 
             {
                 if (response.body) {
@@ -620,20 +638,21 @@ export class AssistantAImageMessage implements IUrlIMGMessage{
 }
 
 export class AImageModel implements IModel {
-    base_url : string
+    source : IModelSource[]
     name : string
     type : ModelType
     id : string
-    constructor(actual_name :string, actual_id : string, base_url : string) {
+    constructor(actual_name :string, actual_id : string, source : IModelSource[]) {
         this.name = actual_name;
         this.type = ModelType.mix,
         this.id = actual_id
-        this.base_url = base_url
+        this.source = source
     }
 
     sendRequest(
         api_key : string,
         current_dialog : IDialogue,
+        source : IModelSource,
     ) : Promise<IMessage | IAsyncMessage | null>{
         let header = new Headers();
         header.append("Authorization", api_key);
@@ -655,7 +674,7 @@ export class AImageModel implements IModel {
             body: body,
             // redirect: 'follow'
         }
-        return fetch(this.base_url, requestOptions)
+        return fetch(source.base_url, requestOptions)
         .then(response => 
             {
                 if (response.body) {
