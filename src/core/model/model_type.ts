@@ -14,6 +14,7 @@ export enum ModelType {
     mix,
     video,
     gemini_image,
+    seedream_image,
 }
 
 export interface IModelSource {
@@ -455,7 +456,7 @@ export class GeminiModel implements IModel {
         })
     }
 
-    sendRequest(
+    async sendRequest(
         api_key : string,
         current_dialog : IDialogue,
         source : IModelSource,
@@ -470,9 +471,14 @@ export class GeminiModel implements IModel {
             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
             generationConfig : config
         })
+        const start_time = Date.now();
         const controller = new AbortController();
-        // 设置更长的超时时间，例如 120 秒
-        const timeoutId = setTimeout(() => controller.abort(), 120000)
+        const timeoutId = setTimeout(() => {
+            controller.abort()
+            console.error("out of time");
+            }, 
+            300000
+        )
         let requestOptions : RequestInit = {
             method: 'POST',
             headers: header,
@@ -488,13 +494,17 @@ export class GeminiModel implements IModel {
                     return new GeminiModelMessage(response.body)
                 }
                 else {
-                    console.log(response)
                     return Promise.reject("invalid response body")
                 }
             }
         ).catch(error => {
                 console.error('error', error)
                 return null;
+            }
+        ).finally(
+            () => {
+                console.log("time used: " + (Date.now() - start_time))
+                clearTimeout(timeoutId)
             }
         );
     }
@@ -516,35 +526,35 @@ export interface IAImageMessageBody {
     prompt : string,
     size : string,
     watermark: boolean,
-    sequential_image_generation: string,
-    sequential_image_generation_options: {
-        max_images: number,
-    }, 
+    // sequential_image_generation: string,
+    // sequential_image_generation_options: {
+    //     max_images: number,
+    // }, 
 }
 
-function mBodyToImgBody(msg : IMessageBody, model : AImageModel) : IAImageMessageBody | null {
+function mBodyToImgBody(msg : IMessageBody, model : AImageModel, config? :object) : IAImageMessageBody | null {
     if (msg.content.length == 0) {
         console.error("message shoudle be text form")
         return null
     }
-    let target_body = {
+    let target_body : IAImageMessageBody = {
         model : model.id,
         prompt : msg.content,
-        size : '2k',
+        size : '1k',
         watermark: false,
-        sequential_image_generation: "auto",
-        sequential_image_generation_options: {
-            max_images: 4,
-        }, 
+        // sequential_image_generation: "auto",
+        // sequential_image_generation_options: {
+        //     max_images: 4,
+        // }, 
     }
 
     // Type guard for extended properties
-    interface ExtendedMessageBody extends IMessageBody {
-        sequential_image_generation_options?: {
-            max_images: number;
-        };
-    }
-    const extend_msg = msg as ExtendedMessageBody
+    // interface ExtendedMessageBody extends IMessageBody {
+    //     sequential_image_generation_options?: {
+    //         max_images: number;
+    //     };
+    // }
+    // const extend_msg = msg as ExtendedMessageBody
 
     if ("size" in msg && typeof msg.size == "string") {
         target_body.size = msg.size
@@ -552,11 +562,16 @@ function mBodyToImgBody(msg : IMessageBody, model : AImageModel) : IAImageMessag
     if ("watermark" in msg && typeof msg.watermark == "boolean") {
         target_body.watermark = msg.watermark
     }
-    if ("sequential_image_generation" in msg && typeof msg.sequential_image_generation == "string") {
-        target_body.sequential_image_generation = msg.sequential_image_generation
-    }
-    if (extend_msg.sequential_image_generation_options){
-        target_body.sequential_image_generation_options = extend_msg.sequential_image_generation_options
+    // if ("sequential_image_generation" in msg && typeof msg.sequential_image_generation == "string") {
+    //     target_body.sequential_image_generation = msg.sequential_image_generation
+    // }
+    // if (extend_msg.sequential_image_generation_options){
+    //     target_body.sequential_image_generation_options = extend_msg.sequential_image_generation_options
+    // }
+    if (config) {
+        for (const key in config) {
+            (target_body as any)[key] = (config as any)[key];
+        }
     }
     return target_body
 }
@@ -642,9 +657,9 @@ export class AImageModel implements IModel {
     name : string
     type : ModelType
     id : string
-    constructor(actual_name :string, actual_id : string, source : IModelSource[]) {
+    constructor(actual_name :string, actual_id : string, source : IModelSource[], type? : ModelType) {
         this.name = actual_name;
-        this.type = ModelType.mix,
+        this.type = type ?? ModelType.mix,
         this.id = actual_id
         this.source = source
     }
@@ -653,6 +668,7 @@ export class AImageModel implements IModel {
         api_key : string,
         current_dialog : IDialogue,
         source : IModelSource,
+        config? :object
     ) : Promise<IMessage | IAsyncMessage | null>{
         let header = new Headers();
         header.append("Authorization", api_key);
@@ -663,7 +679,7 @@ export class AImageModel implements IModel {
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        let msg_body = mBodyToImgBody(msg.serialize(), this)
+        let msg_body = mBodyToImgBody(msg.serialize(), this, config)
         if (!msg_body) {
             return Promise.reject("failed to analyzed message")
         }

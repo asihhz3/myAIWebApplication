@@ -46,6 +46,7 @@ import { type IModel,  type IModelSource,  ModelType } from '@/core/model/model_
 import MixModelParamPanel from './param/MixModelParamPanel.vue';
 import GeminiModelParamPanel from './param/GeminiModelParamPanel.vue';
 import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
+import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -81,6 +82,8 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
                             return "GeminiModelParamPanel"
                         case ModelType.video:
                             return "VideoModelParamPanel"
+                        case ModelType.seedream_image:
+                            return "SeedreamModelParamPanel"
                         case ModelType.mix:
                         default:
                             return "MixModelParamPanel"
@@ -179,6 +182,7 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
             "GeminiModelParamPanel" : GeminiModelParamPanel,
             "VideoModelParamPanel" : VideoModelParamPanel,
             "DialogueDisplay" : DialogueDisplay,
+            "SeedreamModelParamPanel" : SeedreamModelParamPanel
         }
     }
 </script>
