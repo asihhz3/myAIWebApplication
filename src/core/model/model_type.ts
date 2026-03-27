@@ -483,9 +483,9 @@ export class GeminiModel implements IModel {
             method: 'POST',
             headers: header,
             body: body,
-            redirect: 'follow',
+            // redirect: 'follow',
             signal: controller.signal,
-            keepalive: true
+            // keepalive: true
         }
         return fetch(source.base_url, requestOptions)
         .then(response => 
