@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { RouterLink } from 'vue-router';
+import Log from './Log.vue';
 
 </script>
 
@@ -10,6 +11,7 @@
     <RouterLink to="/identify">identify</RouterLink>
   </span>
   <RouterView></RouterView>
+  <Log></Log>
 </template>
 
 <style>

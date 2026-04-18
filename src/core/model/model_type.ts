@@ -2,6 +2,7 @@ import { reactive, ref, toRef, unref, type Ref } from "vue";
 import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
 import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
+import { writeError, writeLog } from "../util/log";
 
 export enum ModelSourceType {
     cometapi = "cometapi"
@@ -85,7 +86,7 @@ export class LLMModel implements IModel {
                 return msg;
             }
         ).catch(error => {
-                console.error('error', error)
+                writeError('error :' + error)
                 return null;
             }
         );
@@ -220,7 +221,7 @@ export class XAiVideoModel implements IModel {
                 )
             }
         ).catch(error => {
-                console.error('error', error)
+                writeLog('error' + error)
                 return null;
             }
         )
@@ -421,8 +422,8 @@ class GeminiModelMessage extends GeminiMessage implements IAsyncMessage, ITextMe
                     )
                 }
                 else {
-                    console.error("invaild json data:")
-                    console.error(json)
+                    writeError("invaild json data:")
+                    writeError(json.toString())
                 }
             }
         )
@@ -475,7 +476,7 @@ export class GeminiModel implements IModel {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort()
-            console.error("out of time");
+            writeError("out of time");
             }, 
             300000
         )
@@ -498,12 +499,12 @@ export class GeminiModel implements IModel {
                 }
             }
         ).catch(error => {
-                console.error('error', error)
+                writeError('error' + error)
                 return null;
             }
         ).finally(
             () => {
-                console.log("time used: " + (Date.now() - start_time))
+                writeLog("time used: " + (Date.now() - start_time))
                 clearTimeout(timeoutId)
             }
         );
@@ -534,7 +535,7 @@ export interface IAImageMessageBody {
 
 function mBodyToImgBody(msg : IMessageBody, model : AImageModel, config? :object) : IAImageMessageBody | null {
     if (msg.content.length == 0) {
-        console.error("message shoudle be text form")
+        writeError("message shoudle be text form")
         return null
     }
     let target_body : IAImageMessageBody = {

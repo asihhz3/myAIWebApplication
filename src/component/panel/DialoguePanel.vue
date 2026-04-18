@@ -38,7 +38,6 @@
     import { Dialogue, SystemMessage } from '@/core/dialog/dialog_type'; 
     import { computed, ref, type Ref } from 'vue';
     import ModelSelect  from '@/component/select/ModelSelect.vue'
-    import { sendRequest } from '@/core/request/request';
     import LLMModelParamPanel from './param/LLMModelParamPanel.vue';
 import DialogueDisplay from '../display/DialogueDisplay.vue';
 import type { IParamPanel } from '@/core/util/component_type';
@@ -47,6 +46,7 @@ import MixModelParamPanel from './param/MixModelParamPanel.vue';
 import GeminiModelParamPanel from './param/GeminiModelParamPanel.vue';
 import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
 import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
+import { writeLog } from '@/core/util/log';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -99,17 +99,12 @@ import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
                     return null
                 }
                 const a = this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
-                console.log(this.model_selected.source)
-                console.log(this.user_selected?.key_list)
                 return this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
             }
         },
         props : ["dialog_id"],
         methods : {
             setModel(val : IModel | null) {
-                console.log(`source : ${this.model_source_selected}`)
-                console.log(`model : ${val}`)
-                console.log(val)
                 this.model_selected = val
                 this.model_source_selected = null
             },
@@ -144,12 +139,13 @@ import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
                 }
                 this.dialog.quene.push(user_message)
                 this.model_selected.sendRequest(selected_api.key, this.dialog, this.model_source_selected, user_config).then(
-                // sendRequest(this.model_selected, user_key, this.dialog, user_config).then(
                     msg => {
                         if (msg) {
                             this.dialog.quene.push(msg)
                         }
                     }
+                ).finally(
+                    () => writeLog("The conversation is over.")
                 )
             },
             test_user() {
@@ -167,7 +163,6 @@ import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
                     return
                 }
                 this.dialog.quene.push(user_message)
-                console.log(this.dialog.quene)
             },
 
             systemOrder() {

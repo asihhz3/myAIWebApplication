@@ -38,6 +38,7 @@
 
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
+import { writeError } from '@/core/util/log';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
 
@@ -83,7 +84,7 @@ import { base64ToPath } from 'image-tools';
                     this.imgs_input.forEach(
                         (val,idx) => base64ToPath(val).then(
                             path => this.imgs_preview[idx] = path,
-                            err => console.error(err)
+                            err => writeError(err)
                         )
                     )
                     this.ready = true

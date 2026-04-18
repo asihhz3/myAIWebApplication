@@ -6,7 +6,7 @@
             <textarea wrap="soft" v-model="edit_content" :hidden="!is_edit_mode" style="width: 90%;"></textarea>
         </div>
         <div id="content_images">
-            <img class="img" v-if="imgs" v-for="(bimg, idx) in imgs" :key="idx" :src="bimg.value" ></img>
+            <img class="img" v-if="imgs" v-for="(bimg, idx) in imgs.value" :key="idx" :src="bimg" ></img>
         </div>
         <video v-if="value && value.video_url" controls>
             <source v-bind:src="value.video_url" type="video/mp4" />
@@ -26,6 +26,7 @@
     import { base64ToPath, pathToBase64 } from 'image-tools'
 import { publicResource } from '@/core/util/router';
 import Viewer from 'viewerjs';
+import { writeError } from '@/core/util/log';
     export default {
         data() {
             return {
@@ -38,7 +39,7 @@ import Viewer from 'viewerjs';
                             return this.value.content
                         }
                         else {
-                            console.error("unexpected error: invaild content type")
+                            writeError("unexpected error: invaild content type")
                             return ""
                         }
                     }
@@ -49,18 +50,18 @@ import Viewer from 'viewerjs';
                             const imgs_url_beg = (this.value.base64imgs ? this.value.base64imgs.length : 0)
                             const size =    
                                 (this.value.imgs_url ? this.value.imgs_url.length : 0) + imgs_url_beg
-                            let imgs_arr : Ref<string>[]= Array(size).fill(ref(publicResource.loadingImage))
+                            let imgs_arr : Ref<string[]>= ref(Array(size).fill(publicResource.loadingImage))
                             if (this.value.base64imgs) {
                                 this.value.base64imgs.forEach(
                                     (val, idx) => base64ToPath(val).then(
-                                        path => imgs_arr[idx]!.value = path,
-                                        err => console.error(err)
+                                        path => imgs_arr.value[idx] = path,
+                                        err => writeError(err)
                                     )
                                 )
                             }
                             if (this.value.imgs_url) {
                                 this.value.imgs_url.forEach(
-                                    (val, idx) => imgs_arr[idx + imgs_url_beg]!.value = val
+                                    (val, idx) => imgs_arr.value[idx + imgs_url_beg] = val
                                 )
                             }
                             return imgs_arr

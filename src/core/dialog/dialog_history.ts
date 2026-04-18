@@ -1,5 +1,6 @@
 import { reactive } from "vue"
 import type { IDialogue } from "./dialog_type"
+import { writeError } from "../util/log"
 
 export class DialogHistory {
     dialog : IDialogue
@@ -28,7 +29,7 @@ export var client_dialog_history = reactive(
                 return dialog
             }
             else {
-                console.error("dialog not found: " + id)
+                writeError("dialog not found: " + id)
                 return null
             }
         },
@@ -44,7 +45,7 @@ export var client_dialog_history = reactive(
         },
         removeHistory (dialog_id : string) {
             if (!this.history_id_list.some(id => id == dialog_id)) {
-                console.error("unknown dialog id: " +  dialog_id)
+                writeError("unknown dialog id: " +  dialog_id)
                 return
             }
             let list = getHistory().filter(dia => dia.dialog.id != dialog_id)

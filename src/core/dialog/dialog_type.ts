@@ -1,5 +1,6 @@
 import { ref, unref, type Ref } from "vue"
 import { IdGenerator2, ResponseAnalyzer } from "../util/tool"
+import { writeError, writeLog } from "../util/log";
 
 
 export interface IMessageBody {
@@ -157,7 +158,7 @@ export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
                     this.content = this.current_content.value
                 }
                 else {
-                    console.error("unexpected error : failed to parse response json")
+                    writeError("unexpected error : failed to parse response json")
                     this.finish_reason = "error"
                 }
             }
@@ -218,11 +219,10 @@ export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage 
                 if(obj.choices.length == 0) {
                 }
                 else if (obj.choices.length > 0 && obj.choices[0]!.finish_reason) {
-                    console.log("finish")
                     this.finish_reason = obj.choices[0]!.finish_reason
                 }
                 else if(obj.usage != null) {
-                    console.log(`total usage: ${obj.usage.total_tokens}`)
+                    writeLog(`total usage: ${obj.usage.total_tokens}`)
                 }
                 else {
                     if (obj.choices[0]!.delta) {
@@ -234,7 +234,7 @@ export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage 
                         }
                         else {
                             this.current_content.value += "<...>"
-                            console.error("response string out of range")
+                            writeError("response string out of range")
                         }
                     }
                 }

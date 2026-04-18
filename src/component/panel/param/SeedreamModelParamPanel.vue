@@ -39,6 +39,7 @@
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
 import type { IModelSource } from '@/core/model/model_type';
+import { writeError, writeLog } from '@/core/util/log';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
 
@@ -84,7 +85,7 @@ import { base64ToPath } from 'image-tools';
                     this.imgs_input.forEach(
                         (val,idx) => base64ToPath(val).then(
                             path => this.imgs_preview[idx] = path,
-                            err => console.error(err)
+                            err => writeError(err)
                         )
                     )
                     this.ready = true
@@ -108,7 +109,7 @@ import { base64ToPath } from 'image-tools';
                 return new SystemMessage(this.user_input)
             },
             checkGuidanceScale(e : Event) {
-                console.log(this.size_option)
+                writeLog( "select size:" + this.size_option)
                 if (typeof this.guidance_scale != "number" || Number.isNaN(this.guidance_scale) || this.guidance_scale < 1 || this.guidance_scale > 16) {
                     this.guidance_scale = 3
                 }

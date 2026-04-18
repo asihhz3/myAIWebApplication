@@ -49,7 +49,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     ),
                     new AImageModel("DouBao Seedream 4.5", "doubao-seedream-4-5-251128", [ct_image_model], ModelType.seedream_image),
                     new AImageModel("DouBao Seedream 5", "doubao-seedream-5-0-260128", [ct_image_model], ModelType.seedream_image),
-                    new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model])
+                    new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
                 ] as IModel[]
             }
         },
