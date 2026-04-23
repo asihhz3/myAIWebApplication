@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-    import { Dialogue, type IBase64IMGMessage, type IMessage, type IAsyncMessage, type ITextMessage, type IUrlIMGMessage, type IVideoMesasage } from "@/core/dialog/dialog_type";
+    import { Dialogue, type IBase64IMGMessage, type IMessage, type IAsyncMessage, type ITextMessage, type IUrlIMGMessage, type IVideoMesasage, type IAudioMesasage } from "@/core/dialog/dialog_type";
     import ContentDisplay from "@/component/display/ContentDisplay.vue"
 import { type IDisplayValue } from "@/core/util/display_type";
 import { reactive, ref, toRef, type Ref } from "vue";
@@ -22,7 +22,8 @@ import { reactive, ref, toRef, type Ref } from "vue";
                     content : "" as string | Ref<string>,
                     base64imgs : undefined as Ref<string[]> | undefined,
                     imgs_url : undefined as Ref<string[]> | undefined,
-                    video_url : undefined as Ref<string> | undefined
+                    video_url : undefined as Ref<string> | undefined,
+                    audio_url : undefined as string | undefined
                 }
                 if ("current_content" in msg && "finish_reason" in msg) {
                     value.content = toRef((msg as IAsyncMessage), "current_content")
@@ -38,6 +39,9 @@ import { reactive, ref, toRef, type Ref } from "vue";
                 }
                 if ("video_url" in msg) {
                     value.video_url = toRef((msg as IVideoMesasage), "video_url")
+                }
+                if ("audio_url" in msg) {
+                    value.audio_url = (msg as IAudioMesasage).audio_url
                 }
                 return reactive(value)
             },

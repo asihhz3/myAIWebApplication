@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts">
-import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType } from '@/core/model/model_type';
+import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType, MiloraTTSModel } from '@/core/model/model_type';
 
     const ct_chat_model = {
         type : ModelSourceType.cometapi,
@@ -29,6 +29,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
         type : ModelSourceType.cometapi,
         base_url : "https://api.cometapi.com/grok/v1/videos"
     }
+
 
     export default {
         data() {
@@ -50,6 +51,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     new AImageModel("DouBao Seedream 4.5", "doubao-seedream-4-5-251128", [ct_image_model], ModelType.seedream_image),
                     new AImageModel("DouBao Seedream 5", "doubao-seedream-5-0-260128", [ct_image_model], ModelType.seedream_image),
                     new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
+                    new MiloraTTSModel(),
                 ] as IModel[]
             }
         },

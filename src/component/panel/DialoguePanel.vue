@@ -47,6 +47,7 @@ import GeminiModelParamPanel from './param/GeminiModelParamPanel.vue';
 import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
 import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
 import { writeLog } from '@/core/util/log';
+import TTSModelParamPanel from './param/TTSModelParamPanel.vue';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -78,6 +79,8 @@ import { writeLog } from '@/core/util/log';
                     switch (this.model_selected.type) {
                         case ModelType.llm:
                             return "LLMModelParamPanel"
+                        case ModelType.tts:
+                            return "TTSModelParamPanel"
                         case ModelType.gemini_image:
                             return "GeminiModelParamPanel"
                         case ModelType.video:
@@ -177,7 +180,8 @@ import { writeLog } from '@/core/util/log';
             "GeminiModelParamPanel" : GeminiModelParamPanel,
             "VideoModelParamPanel" : VideoModelParamPanel,
             "DialogueDisplay" : DialogueDisplay,
-            "SeedreamModelParamPanel" : SeedreamModelParamPanel
+            "SeedreamModelParamPanel" : SeedreamModelParamPanel,
+            "TTSModelParamPanel" : TTSModelParamPanel
         }
     }
 </script>

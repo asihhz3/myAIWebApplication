@@ -9,6 +9,7 @@ export interface IMessageBody {
     base64imgs? : string[],
     imgs_url? : string[],
     video?: string
+    audio?: string
 }
 
 export interface IMessage {
@@ -35,6 +36,9 @@ export interface IUrlIMGMessage extends IMessage{
 }
  export interface IVideoMesasage extends IMessage {
     video_url : Ref<string>
+ }
+ export interface IAudioMesasage extends IMessage {
+    audio_url : string
  }
 
 

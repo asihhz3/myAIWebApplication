@@ -11,6 +11,9 @@
         <video v-if="value && value.video_url" controls>
             <source v-bind:src="value.video_url" type="video/mp4" />
         </video>
+        <audio v-if="value && value.audio_url">
+            <source v-bind:src="value.audio_url" type="audio/mp3" />
+        </audio>
         <div>
             <input type="button" value="delete" @click="$emit('delete_message', value!.message_id)" />
             <input type="button" value="edit" @click="switch_edit_mode" :hidden="txt_content.length == 0 || is_edit_mode"/>
@@ -126,7 +129,7 @@ import { writeError } from '@/core/util/log';
     .img {
         float: left;
         margin: 4px 4px;
-        height: 10%;
-        width: 10%;
+        height: 90%;
+        width: 90%;
     }
 </style>

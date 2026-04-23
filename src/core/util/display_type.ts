@@ -7,6 +7,7 @@ export interface IDisplayValue {
     base64imgs? : string[]
     imgs_url? : string[]
     video_url? : string
+    audio_url? : string
 }
 
 // export class DisplayTextValue implements IDisplayValue{

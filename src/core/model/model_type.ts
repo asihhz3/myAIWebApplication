@@ -1,11 +1,12 @@
 import { reactive, ref, toRef, unref, type Ref } from "vue";
-import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage } from "../dialog/dialog_type";
+import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage, type IAudioMesasage as IAudioMessage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
 import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
 import { writeError, writeLog } from "../util/log";
 
 export enum ModelSourceType {
-    cometapi = "cometapi"
+    cometapi = "cometapi",
+    miloraapi = "miloraapi"
 }
 
 export enum ModelType {
@@ -14,6 +15,7 @@ export enum ModelType {
     img2img,
     mix,
     video,
+    tts,
     gemini_image,
     seedream_image,
 }
@@ -704,6 +706,82 @@ export class AImageModel implements IModel {
             }
         ).catch(error => {
                 console.error('error', error)
+                return null;
+            }
+        );
+    }
+
+}
+
+export class AudioOutputMessage implements IAudioMessage{
+    id: string;
+    role: "system" | "user" | "assistant" | "_invaild";
+    audio_url : string;
+
+    constructor(url : string) {
+        this.id = IdGenerator2()
+        this.role = "assistant"
+        this.audio_url = url;
+    }
+
+    serialize(): IMessageBody {
+        return {
+            "role" : this.role,
+            "content" : "",
+            "audio" : this.audio_url
+        }
+    }
+    
+}
+
+export class MiloraTTSModel implements IModel {
+    source : IModelSource[]
+    name : string
+    type : ModelType
+    id : string
+    constructor() {
+        this.name = "Manbo TTs";
+        this.type = ModelType.tts,
+        this.id = "mbAIscvip"
+        this.source = [{
+            type : ModelSourceType.miloraapi,
+            base_url : "https://api.milorapart.top"
+        }]
+    }
+
+
+    async sendRequest(
+        api_key : string,
+        current_dialog : IDialogue,
+        source : IModelSource,
+        config? : object
+    ) : Promise<IMessage | IAsyncMessage | null>{
+        let header = new Headers();
+        header.append("Authorization", `Bearer ${api_key}`);
+        header.append("Content-Type", "application/json");
+        let body = JSON.stringify({
+            ...config,
+            text : current_dialog.quene[0]!.serialize()!.content
+        })
+        let requestOptions : RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: body,
+            redirect: 'follow'
+        };
+        return fetch(`${source.base_url}/apis/mbAIscvip`, requestOptions)
+        .then(async response => 
+            {
+                if (response.ok) {
+                    var body = await response.json();
+                    if ("code" in body && body.code == "200") {
+                        return Promise.resolve(new AudioOutputMessage(body.url as string))
+                    }
+                }
+                throw "failed to analize response"
+            }
+        ).catch(error => {
+                writeError('error :' + error)
                 return null;
             }
         );

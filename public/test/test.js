@@ -159,3 +159,53 @@ fetch("https://api.cometapi.com/grok/v1/videos/6dffbdaf-d3b4-4153-0926-43ba8b514
    .catch(error => console.log('error', error));
 }
 
+function test5() {
+
+   // Using fetch API
+const apiKey = 'mk_0925cb6c0350c11a543dcc0757e9d41c';
+const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + apiKey,
+};
+
+
+// const data = {
+//    "messages": [
+//       {
+//          "role": "user","content": "企鹅可以和橘子结婚吗"
+//       }
+//    ],
+//    "model": "gpt-5.3-codex"
+// }
+
+// fetch('https://api.milorapart.top/apis/AIchat', {
+//     method: 'POST',
+//     headers,
+//     body: JSON.stringify(data)
+// })
+//     .then(response => response.json())
+//     .then(data => console.log(data))
+//     .catch(error => console.error('Error:', error));
+
+// fetch('https://api.milorapart.top/apis/AIchat?models', {
+//     method: 'GET',
+//     headers,
+// })
+//     .then(response => response.json())
+//     .then(data => console.log(data))
+//     .catch(error => console.error('Error:', error));
+
+
+
+   // Using fetch API
+const params = new URLSearchParams({
+    text: "奥力费安"
+})
+
+fetch('https://api.milorapart.top/apis/mbAIscvip?' + params, { headers })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error('Error:', error));
+
+}
+
