@@ -28,7 +28,7 @@
                     <option  value="4k">4k</option>
                 </select>
             </span>
-            <div>
+            <div v-if="multi_modal_enable">
                 ouput: 
                 <span>
                     text
@@ -39,12 +39,17 @@
                     <input type="checkbox" value="IMAGE" @change="set_ouput_option" checked />
                 </span>
             </div>
+            <div>
+                tool
+                <br></br>
+                <input type="checkbox" value="google_search" @change="set_tools_option">Google Search</input>
+            </div>
         </div>
         <div>
         </div>
         <span>
             Image :
-            <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
+            <input multiple ref="img_input" accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
             <input type="button" @click="selected_imgs_clear" value="clear"></input>
         </span>
         <div v-if="imgs_preview.length > 0">
@@ -61,6 +66,7 @@ import type { IModelSource } from '@/core/model/model_type';
 import { writeError } from '@/core/util/log';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
+import { computed } from 'vue';
 
     export default {
         data() {
@@ -71,6 +77,10 @@ import { base64ToPath } from 'image-tools';
                 aspect_ratio_option : "1:1",
                 size_option : "1k",
                 ouput_option : { TEXT : true, IMAGE : true},
+                tools_option : { use_google_search : false} as any,
+                multi_modal_enable : computed(
+                    () => (this.model_selected as string).endsWith("image")
+                ),
                 ready : true
             }
         },
@@ -91,7 +101,16 @@ import { base64ToPath } from 'image-tools';
                 let check_box = event.target as unknown as CheckBox
                 this.ouput_option[check_box.value as "TEXT" | "IMAGE"] = check_box.checked
             },
+            set_tools_option (event: Event) {
+                interface CheckBox {
+                    value : string
+                    checked : boolean
+                }
+                let check_box = event.target as unknown as CheckBox
+                this.tools_option[check_box.value] = check_box.checked
+            },
             selected_imgs_clear() : void {
+                (this.$refs.img_input as HTMLInputElement).value = ''
                 this.imgs_input = []
                 this.imgs_preview = []
             },
@@ -121,18 +140,36 @@ import { base64ToPath } from 'image-tools';
             },
 
             createConfig() : any {
-                let responseModalities = [] as string[]
-                for (const opt of Object.keys(this.ouput_option) as Array<keyof typeof this.ouput_option> ) {
-                    if (this.ouput_option[opt]) {
-                        responseModalities.push(opt)
+                let responseModalities = undefined
+                if (this.multi_modal_enable) {
+                    responseModalities = [] as string[]
+                    for (const opt of Object.keys(this.ouput_option) as Array<keyof typeof this.ouput_option> ) {
+                        if (this.ouput_option[opt]) {
+                            responseModalities.push(opt)
+                        }
+                    }
+                }
+                let tools : string[] = []
+                for (const opt of Object.keys(this.tools_option)) {
+                    if (this.tools_option[opt]) {
+                        tools.push(opt)
                     }
                 }
                 return {
-                    responseModalities : responseModalities,
-                    imageConfig: {
-                        aspectRatio: this.aspect_ratio_option,
-                        imageSize: this.size_option,
-                    }
+                    generationConfig : {
+                        responseModalities : responseModalities,
+                        imageConfig: {
+                            aspectRatio: this.aspect_ratio_option,
+                            imageSize: this.size_option,
+                        },
+                    },
+                    tools : tools.length > 0 ? tools.map(
+                        toolstr => {
+                            let obj : any = {}
+                            obj[toolstr] = {}
+                            return obj
+                        }
+                    ) : undefined
                 }
             },
             createMessage() : IMessage | null {
@@ -147,6 +184,7 @@ import { base64ToPath } from 'image-tools';
                 return new SystemMessage(this.user_input)
             }
         },
+        props : ["model_selected"]
     }
 </script>
 

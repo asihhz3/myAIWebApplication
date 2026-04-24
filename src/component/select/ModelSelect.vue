@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts">
-import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType, MiloraTTSModel } from '@/core/model/model_type';
+import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType, MiloraTTSModel, GPTImageModel } from '@/core/model/model_type';
 
     const ct_chat_model = {
         type : ModelSourceType.cometapi,
@@ -44,12 +44,30 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                         [ct_gemini("gemini-2.5-flash-image")]
                     ),
                     new GeminiModel(
+                        "Gemini 2.5 Pro", 
+                        "gemini-2.5-pro", 
+                        [ct_gemini("gemini-2.5-pro")]
+                    ),
+                    new GeminiModel(
+                        "Gemini 3 flash", 
+                        "gemini-3-flash", 
+                        [ct_gemini("gemini-3-flash")]
+                    ),
+                    new GeminiModel(
                         "Gemini 3 Pro image", 
                         "gemini-3-pro-image", 
                         [ct_gemini("gemini-3-pro-image")]
                     ),
+                    new GeminiModel(
+                        "Gemini 3.1 Flash Image Preview", 
+                        "gemini-3.1-flash-image-preview", 
+                        [ct_gemini("gemini-3.1-flash-image")]
+                    ),
                     new AImageModel("DouBao Seedream 4.5", "doubao-seedream-4-5-251128", [ct_image_model], ModelType.seedream_image),
                     new AImageModel("DouBao Seedream 5", "doubao-seedream-5-0-260128", [ct_image_model], ModelType.seedream_image),
+                    new GPTImageModel("GPT-Image 1.5", "gpt-image-1.5", [ct_image_model], ModelType.gpt_image2),
+                    new GPTImageModel("GPT-Image 1", "gpt-image-1", [ct_image_model], ModelType.gpt_image2),
+                    new GPTImageModel("GPT-Image 2", "gpt-image-2", [ct_image_model], ModelType.gpt_image2),
                     new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
                     new MiloraTTSModel(),
                 ] as IModel[]

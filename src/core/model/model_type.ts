@@ -2,7 +2,7 @@ import { reactive, ref, toRef, unref, type Ref } from "vue";
 import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage, type IAudioMesasage as IAudioMessage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
 import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
-import { writeError, writeLog } from "../util/log";
+import { content, writeError, writeLog } from "../util/log";
 
 export enum ModelSourceType {
     cometapi = "cometapi",
@@ -18,6 +18,7 @@ export enum ModelType {
     tts,
     gemini_image,
     seedream_image,
+    gpt_image2
 }
 
 export interface IModelSource {
@@ -472,7 +473,7 @@ export class GeminiModel implements IModel {
         header.append('Connection',' keep-alive')
         let body = JSON.stringify({
             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
-            generationConfig : config
+            ...config
         })
         const start_time = Date.now();
         const controller = new AbortController();
@@ -527,8 +528,8 @@ export class GeminiModel implements IModel {
 export interface IAImageMessageBody {
     model : string,
     prompt : string,
-    size : string,
-    watermark: boolean,
+    size? : string,
+    watermark?: boolean,
     // sequential_image_generation: string,
     // sequential_image_generation_options: {
     //     max_images: number,
@@ -543,8 +544,7 @@ function mBodyToImgBody(msg : IMessageBody, model : AImageModel, config? :object
     let target_body : IAImageMessageBody = {
         model : model.id,
         prompt : msg.content,
-        size : '1k',
-        watermark: false,
+        // watermark: false,
         // sequential_image_generation: "auto",
         // sequential_image_generation_options: {
         //     max_images: 4,
@@ -578,6 +578,7 @@ function mBodyToImgBody(msg : IMessageBody, model : AImageModel, config? :object
     }
     return target_body
 }
+
 
 // export class UserAImageMessage implements IMessage{
 //     role: "system" | "user" | "assistant" | "_invaild"
@@ -667,7 +668,7 @@ export class AImageModel implements IModel {
         this.source = source
     }
 
-    sendRequest(
+    async sendRequest(
         api_key : string,
         current_dialog : IDialogue,
         source : IModelSource,
@@ -711,6 +712,101 @@ export class AImageModel implements IModel {
         );
     }
 
+}
+
+class GPTImage2Message implements IBase64IMGMessage {
+    id: string;
+    role: "system" | "user" | "assistant" | "_invaild";
+    base64imgs : Ref<string[]>
+
+    constructor(json : Promise<any>) {
+        interface GPTImage2Response {
+            created?: number,
+            data: [ {b64_json : string} ],
+            // usage : {
+            //     generated_images: number
+            //     output_tokens: number,
+            //     total_tokens: number
+            // }
+        }
+        this.id = IdGenerator2()
+        this.role = "assistant"
+        this.base64imgs = ref([])
+        json.then(
+            (response : GPTImage2Response) => {
+                for (var data of response.data) {
+                    this.base64imgs.value.push('data:image/png;base64, '.concat(data.b64_json))
+                }
+            }
+        ).catch(
+            err => writeError(`error : ${err}`)
+        )
+    }
+    serialize(): IMessageBody {
+        return {
+            role : this.role,
+            content : "",
+            base64imgs : this.base64imgs.value
+        }
+    }
+    
+}
+
+export class GPTImageModel implements IModel {
+    source : IModelSource[]
+    name : string
+    type : ModelType
+    id : string
+    constructor(actual_name :string, actual_id : string, source : IModelSource[], type? : ModelType) {
+        this.name = actual_name;
+        this.type = type ?? ModelType.mix,
+        this.id = actual_id
+        this.source = source
+    }
+
+    async sendRequest(
+        api_key : string,
+        current_dialog : IDialogue,
+        source : IModelSource,
+        config? :object
+    ) : Promise<IMessage | IAsyncMessage | null>{
+        let header = new Headers();
+        header.append("Authorization", api_key);
+        header.append("Content-Type", "application/json");
+        header.append('Accept', '*/*')
+        header.append('Connection',' keep-alive')
+        let msg = current_dialog.quene[current_dialog.quene.length - 1]
+        if (!current_dialog.quene || !msg) {
+            return Promise.reject("lack of prompt message")
+        }
+        let msg_body = mBodyToImgBody(msg.serialize(), this, config)
+        if (!msg_body) {
+            return Promise.reject("failed to analyzed message")
+        }
+        let body = JSON.stringify(msg_body)
+        let requestOptions : RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: body,
+            // redirect: 'follow'
+        }
+        return fetch(source.base_url, requestOptions)
+        .then(response => 
+            {
+                if (response.body) {
+                    return new GPTImage2Message(response.json())
+                }
+                else {
+                    console.log(response)
+                    return Promise.reject("invalid response body")
+                }
+            }
+        ).catch(error => {
+                console.error('error', error)
+                return null;
+            }
+        );
+    }
 }
 
 export class AudioOutputMessage implements IAudioMessage{

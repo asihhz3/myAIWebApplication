@@ -21,7 +21,7 @@
             >{{ source.type }}</option>
         </select>
         <br></br>
-        <component v-if="param_selected" v-bind:is="param_selected" ref="param"></component>
+        <component v-if="param_selected" v-bind:is="param_selected" ref="param" v-bind:model_selected="model_selected!.id"></component>
 
         <button @click="systemOrder">System Order</button>
         <button @click="communicate">Send</button>
@@ -48,6 +48,7 @@ import VideoModelParamPanel from './param/VideoModelParamPanel.vue';
 import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
 import { writeLog } from '@/core/util/log';
 import TTSModelParamPanel from './param/TTSModelParamPanel.vue';
+import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -87,6 +88,8 @@ import TTSModelParamPanel from './param/TTSModelParamPanel.vue';
                             return "VideoModelParamPanel"
                         case ModelType.seedream_image:
                             return "SeedreamModelParamPanel"
+                        case ModelType.gpt_image2:
+                            return "GPTImage2ParamPanel"
                         case ModelType.mix:
                         default:
                             return "MixModelParamPanel"
@@ -181,6 +184,7 @@ import TTSModelParamPanel from './param/TTSModelParamPanel.vue';
             "VideoModelParamPanel" : VideoModelParamPanel,
             "DialogueDisplay" : DialogueDisplay,
             "SeedreamModelParamPanel" : SeedreamModelParamPanel,
+            "GPTImage2ParamPanel" : GPTImage2ParamPanel,
             "TTSModelParamPanel" : TTSModelParamPanel
         }
     }

@@ -1,7 +1,7 @@
 
 
 <template>
-    <div id = "sdream_model_param_main">
+    <div id = "gptimage2_model_param_main">
         Input :
         <br></br>
         <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
@@ -11,11 +11,26 @@
             <span>
                 size
                 <select v-model="size_option">
-                    <option  value="1k">1k</option>
-                    <option  value="2k">2k</option>
-                    <option  value="4k">4k</option>
+                    <option  value="1024x1024">1024x1024</option>
+                    <option  value="1536x1024">1536x1024</option>
+                    <option  value="1024x1536">1024x1536</option>
+                    <option  value="2048x2048">2048x2048</option>
+                    <option  value="2048x1152">2048x1152</option>
+                    <option  value="3840x2160">3840x2160</option>
+                    <option  value="2160x3840">2160x3840</option>
+
                 </select>
             </span>
+            <br></br>
+            <span>
+                quality
+                <select v-model="ouput_quality">
+                    <option  value="low">low</option>
+                    <option  value="medium">medium</option>
+                    <option  value="high">high</option>
+                </select>
+            </span>
+            <br></br>
             <span>
                 guidance_scale 
                 <input type="text" @change="checkGuidanceScale" v-model="guidance_scale"/>
@@ -38,7 +53,6 @@
 
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
-import type { IModelSource } from '@/core/model/model_type';
 import { writeError, writeLog } from '@/core/util/log';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
@@ -49,7 +63,8 @@ import { base64ToPath } from 'image-tools';
                 user_input : "",
                 imgs_input : [] as string[],
                 imgs_preview : [] as string[],
-                size_option : "1k",
+                size_option : "1024x1024",
+                ouput_quality : "low",
                 guidance_scale : 3,
                 ready : true
             }
@@ -95,7 +110,7 @@ import { base64ToPath } from 'image-tools';
             createConfig() : any {
                 return {
                     size : this.size_option,
-                    guidance_scale : this.guidance_scale
+                    quality : this.ouput_quality
                 }
             },
             createMessage() : IMessage | null {
@@ -115,12 +130,12 @@ import { base64ToPath } from 'image-tools';
                     this.guidance_scale = 3
                 }
             },
-        },
+        }
     }
 </script>
 
 <style scoped>
-    #sdream_model_param_main {
+    #gptimage2_model_param_main {
         border: 1px dotted aqua;
         margin: 20px 10px;
         padding: 2% 1%;
