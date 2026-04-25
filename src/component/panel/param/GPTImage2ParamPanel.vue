@@ -40,7 +40,7 @@
         </div>
         <span>
             Image :
-            <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
+            <input ref="img_input" accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
             <input type="button" @click="selected_imgs_clear" value="clear"></input>
         </span>
         <div v-if="imgs_preview.length > 0">
@@ -74,15 +74,19 @@ import { base64ToPath } from 'image-tools';
                 if (event.target != null && "files" in event.target) {
                     this.ready = false
                     let files = event.target.files as File[]
+                    if (files.length < 0) {
+                        return;
+                    }
                     this.imgs_preview.concat(new Array(files.length).fill(publicResource.loadingImage))
-                    this.loadImgFileAsBase64(files)
+                    this.loadImgFileAsBase64(files[0]!)
                 }
             },
             selected_imgs_clear() : void {
+                (this.$refs.img_input as HTMLInputElement).value = ""
                 this.imgs_input = []
                 this.imgs_preview = []
             },
-            async loadImgFileAsBase64(files: File[]) {
+            async loadImgFileAsBase64(file: File) {
                 async function loadfile(reader : FileReader, file : File) : Promise<string> {
                     return new Promise(
                         (resolve, reject) => {
@@ -94,9 +98,7 @@ import { base64ToPath } from 'image-tools';
                 }
                 return new Promise(async () => {
                     const reader = new FileReader();
-                    for(let idx = 0; idx < files.length; idx++) {
-                        this.imgs_input.push(await loadfile(reader, files[idx]!))
-                    }
+                    this.imgs_input[0] = await loadfile(reader, file)
                     this.imgs_input.forEach(
                         (val,idx) => base64ToPath(val).then(
                             path => this.imgs_preview[idx] = path,

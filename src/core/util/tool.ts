@@ -141,4 +141,8 @@ export function IdGenerator2() {
     return (base + counter++).toString()
 }
 
+export function GetMimeTypeForBase64(b64 : string) : string{
+    return /(?<=data:image\/)(\w+)/.exec(b64)![0]
+}
+
 export default {}

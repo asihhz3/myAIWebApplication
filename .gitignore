@@ -36,4 +36,4 @@ coverage
 __screenshots__/
 
 #test
-public/test
+public/test/

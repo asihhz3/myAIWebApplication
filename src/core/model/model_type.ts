@@ -1,8 +1,9 @@
 import { reactive, ref, toRef, unref, type Ref } from "vue";
 import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage, type IAudioMesasage as IAudioMessage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
-import { IdGenerator2, ResponseAnalyzer} from "../util/tool";
+import { GetMimeTypeForBase64, IdGenerator2, ResponseAnalyzer} from "../util/tool";
 import { content, writeError, writeLog } from "../util/log";
+import uuid from "uuid-js";
 
 export enum ModelSourceType {
     cometapi = "cometapi",
@@ -579,6 +580,38 @@ function mBodyToImgBody(msg : IMessageBody, model : AImageModel, config? :object
     return target_body
 }
 
+async function mBodyToGPTImgEditBody(msg : IMessageBody, model : AImageModel, config? :object) : Promise<FormData | null> {
+    if (msg.content.length == 0) {
+        writeError("message shoudle be text form")
+        return null
+    }
+    const target_body = new FormData()
+    target_body.append('model', model.id)
+    target_body.append('prompt', msg.content)
+
+    if (msg.base64imgs && msg.base64imgs.length > 0) {
+        try {
+            const file_name = `${model.id}-${uuid.randomUI04()}.${GetMimeTypeForBase64(msg.base64imgs[0]!)}`
+            const blob = await (await fetch(msg.base64imgs[0]!)).blob()
+            const file = new File([blob], file_name, { type: blob.type })
+            target_body.append('image', file)
+        }
+        catch (e : any) {
+            writeError(e.toString());
+            return null
+        }
+    }
+    if ("size" in msg && typeof msg.size == "string") {
+        target_body.append('size', msg.size)
+    }
+    if (config) {
+        for (const key in config) {
+            target_body.append(key, (config as any)[key])
+        }
+    }
+    return target_body
+}
+
 
 // export class UserAImageMessage implements IMessage{
 //     role: "system" | "user" | "assistant" | "_invaild"
@@ -622,7 +655,6 @@ export class AssistantAImageMessage implements IUrlIMGMessage{
         this.base64imgs = ref([])
         new ResponseAnalyzer(new TextDecoder('utf-8'), stream.getReader()).read(
             json => {
-
                 interface AResponse{
                     created?: number,
                     data: [ {url : string} ],
@@ -723,6 +755,7 @@ class GPTImage2Message implements IBase64IMGMessage {
         interface GPTImage2Response {
             created?: number,
             data: [ {b64_json : string} ],
+            output_format : string
             // usage : {
             //     generated_images: number
             //     output_tokens: number,
@@ -735,11 +768,13 @@ class GPTImage2Message implements IBase64IMGMessage {
         json.then(
             (response : GPTImage2Response) => {
                 for (var data of response.data) {
-                    this.base64imgs.value.push('data:image/png;base64, '.concat(data.b64_json))
+                    this.base64imgs.value.push(`data:image/${response.output_format};base64, `.concat(data.b64_json))
                 }
             }
         ).catch(
-            err => writeError(`error : ${err}`)
+            err => {
+                writeError(`error : ${err}`)
+            }
         )
     }
     serialize(): IMessageBody {
@@ -770,39 +805,59 @@ export class GPTImageModel implements IModel {
         source : IModelSource,
         config? :object
     ) : Promise<IMessage | IAsyncMessage | null>{
-        let header = new Headers();
-        header.append("Authorization", api_key);
-        header.append("Content-Type", "application/json");
-        header.append('Accept', '*/*')
-        header.append('Connection',' keep-alive')
         let msg = current_dialog.quene[current_dialog.quene.length - 1]
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        let msg_body = mBodyToImgBody(msg.serialize(), this, config)
-        if (!msg_body) {
+        const msg_body : IMessageBody  = msg.serialize()
+        let body : FormData | string | null = null
+        const is_edit = msg_body.base64imgs && msg_body.base64imgs.length > 0
+        if (is_edit) {
+            body = await mBodyToGPTImgEditBody(msg.serialize(), this, config)
+        }
+        else {
+            body = JSON.stringify(mBodyToImgBody(msg_body, this, config))
+        }
+        if (!body) {
             return Promise.reject("failed to analyzed message")
         }
-        let body = JSON.stringify(msg_body)
+
+        const header = new Headers();
+        header.append("Authorization", `Bearer ${api_key}`);
+        if (!is_edit) {
+            header.append("Content-Type", "application/json");
+        }
+        header.append('Accept', '*/*')
+        header.append('Connection',' keep-alive')
         let requestOptions : RequestInit = {
             method: 'POST',
             headers: header,
             body: body,
             // redirect: 'follow'
         }
-        return fetch(source.base_url, requestOptions)
-        .then(response => 
+        return fetch(`${source.base_url}${is_edit ? '/edits' : '/generations'}`, requestOptions)
+        .then(async response => 
             {
-                if (response.body) {
+                if (response.ok) {
                     return new GPTImage2Message(response.json())
                 }
                 else {
                     console.log(response)
-                    return Promise.reject("invalid response body")
+                    var msg = ""
+                    try{
+                        interface ErrorMsg {
+                            error : {
+                                message : string
+                            }
+                        }
+                        msg = (await response.json() as ErrorMsg).error.message
+                    }
+                    catch {}
+                    throw `response : ${response.status}\n${msg}`
                 }
             }
         ).catch(error => {
-                console.error('error', error)
+                writeError(error.toString())
                 return null;
             }
         );

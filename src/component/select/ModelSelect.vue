@@ -23,7 +23,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
     }
     const ct_image_model = {
         type : ModelSourceType.cometapi,
-        base_url : "https://api.cometapi.com/v1/images/generations"
+        base_url : "https://api.cometapi.com/v1/images"
     }
     const ct_grok_video_model = {
         type : ModelSourceType.cometapi,
