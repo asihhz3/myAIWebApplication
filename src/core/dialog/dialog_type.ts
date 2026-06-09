@@ -2,6 +2,14 @@ import { ref, unref, type Ref } from "vue"
 import { IdGenerator2, ResponseAnalyzer } from "../util/tool"
 import { writeError, writeLog } from "../util/log";
 
+export interface IToolCallFormat {
+    id: string,
+    function: {
+        name: string,
+        arguments : string,
+    },
+    type: string
+}
 
 export interface IMessageBody {
     role : "system" | "user" | "assistant" | "_invaild",
@@ -10,6 +18,7 @@ export interface IMessageBody {
     imgs_url? : string[],
     video?: string
     audio?: string
+    tool_calls? : IToolCallFormat[]
 }
 
 export interface IMessage {
@@ -40,6 +49,14 @@ export interface IUrlIMGMessage extends IMessage{
  export interface IAudioMesasage extends IMessage {
     audio_url : string
  }
+
+
+export interface IToolCallMessage {
+    id : string,
+    role : "system" | "user" | "assistant" | "_invaild",
+    tool_calls: IToolCallFormat[]
+    serialize() : IMessageBody;
+}
 
 
 
@@ -73,6 +90,21 @@ function parseSSEData(line : string) : any | null{
   return null;
 }
 
+export class ToolCallMessage {
+    id : string;
+    tool_calls: IToolCallFormat[];
+    constructor(id : string, tool_calls : IToolCallFormat[]) {
+        this.id = id
+        this.tool_calls = tool_calls
+    }
+    serialize() : IMessageBody {
+        return {
+            role : "assistant",
+            content : "",
+            tool_calls : this.tool_calls
+        } 
+    }
+}
 
 export class UserTextMessage implements ITextMessage {
     id : string

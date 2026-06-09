@@ -1,7 +1,7 @@
 
 <template>
     <div class = "container" id = "dialog_display">
-        <component v-for="msg in current_dialog!.quene" :is="displayMessage(msg)" @delete_message = "deleteMessage" :value="getMessageValue(msg)"></component>
+        <component v-for="msg in current_dialog!.quene" :key="msg.id" :is="displayMessage(msg)" @delete_message = "deleteMessage" :value="getMessageValue(msg)"></component>
     </div>
 </template>
 

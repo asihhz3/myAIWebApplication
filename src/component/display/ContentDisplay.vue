@@ -6,7 +6,7 @@
             <textarea wrap="soft" v-model="edit_content" :hidden="!is_edit_mode" style="width: 90%;"></textarea>
         </div>
         <div id="content_images">
-            <img class="img" v-if="imgs" v-for="(bimg, idx) in imgs.value" :key="idx" :src="bimg" ></img>
+            <img class="img" v-if="imgs && imgs.length" v-for="(bimg, idx) in imgs" :key="idx" :src="bimg" ></img>
         </div>
         <video v-if="value && value.video_url" controls>
             <source v-bind:src="value.video_url" type="video/mp4" />
@@ -25,60 +25,68 @@
 
 <script lang="ts">
     import { type IDisplayValue } from '@/core/util/display_type';
-    import { computed, ref, type Ref } from 'vue';
-    import { base64ToPath, pathToBase64 } from 'image-tools'
-import { publicResource } from '@/core/util/router';
-import Viewer from 'viewerjs';
-import { writeError } from '@/core/util/log';
+    import { computed, watch } from 'vue';
+    import { base64ToPath } from 'image-tools'
+    import { publicResource } from '@/core/util/router';
+    import Viewer from 'viewerjs';
+    import { writeError } from '@/core/util/log';
     export default {
         data() {
             return {
-                txt_content :computed(
-                    () => {
-                        if (!this.value) {
-                            return ""
-                        }
-                        if (typeof this.value.content == "string") {
-                            return this.value.content
-                        }
-                        else {
-                            writeError("unexpected error: invaild content type")
-                            return ""
-                        }
-                    }
-                ),
-                imgs : computed(
-                    () => {
-                        if (this.value) {
-                            const imgs_url_beg = (this.value.base64imgs ? this.value.base64imgs.length : 0)
-                            const size =    
-                                (this.value.imgs_url ? this.value.imgs_url.length : 0) + imgs_url_beg
-                            let imgs_arr : Ref<string[]>= ref(Array(size).fill(publicResource.loadingImage))
-                            if (this.value.base64imgs) {
-                                this.value.base64imgs.forEach(
-                                    (val, idx) => base64ToPath(val).then(
-                                        path => imgs_arr.value[idx] = path,
-                                        err => writeError(err)
-                                    )
-                                )
-                            }
-                            if (this.value.imgs_url) {
-                                this.value.imgs_url.forEach(
-                                    (val, idx) => imgs_arr.value[idx + imgs_url_beg] = val
-                                )
-                            }
-                            return imgs_arr
-                        }
-                        return null
-                    }
-                ),
-                is_edit_mode : ref(false),
+                is_edit_mode : false,
                 edit_content : this.value && typeof this.value.content == "string" ? this.value.content : "",
+                resolved_base64imgs : [] as string[],
                 img_gallery : null as null | Viewer
+            }
+        },
+        computed : {
+            txt_content() : string {
+                if (!this.value) {
+                    return ""
+                }
+                if (typeof this.value.content == "string") {
+                    return this.value.content
+                }
+                writeError("unexpected error: invaild content type")
+                return ""
+            },
+            imgs() : string[] | null {
+                if (!this.value) {
+                    return null
+                }
+                const base64Count = this.value.base64imgs?.length ?? 0
+                const result : string[] = []
+                for (let i = 0; i < base64Count; i++) {
+                    result.push(this.resolved_base64imgs[i] ?? publicResource.loadingImage)
+                }
+                if (this.value.imgs_url) {
+                    result.push(...this.value.imgs_url)
+                }
+                return result
+            }
+        },
+        watch : {
+            'value.base64imgs': {
+                deep: true,
+                immediate: true,
+                handler(base64imgs : string[] | undefined) {
+                    if (!base64imgs || base64imgs.length === 0) {
+                        this.resolved_base64imgs = []
+                        return
+                    }
+                    this.resolved_base64imgs = new Array(base64imgs.length).fill(publicResource.loadingImage)
+                    base64imgs.forEach((val, idx) => {
+                        base64ToPath(val).then(
+                            path => { this.resolved_base64imgs[idx] = path },
+                            err => writeError(err)
+                        )
+                    })
+                }
             }
         },
         methods : {
             switch_edit_mode() {
+                this.edit_content = this.value && typeof this.value.content == "string" ? this.value.content : ""
                 this.is_edit_mode = true
             },
             abandon_changes() {
@@ -91,8 +99,6 @@ import { writeError } from '@/core/util/log';
                 }
                 this.is_edit_mode = false
             },
-        },
-        watch : {
         },
         props : {
             value : Object as () => IDisplayValue

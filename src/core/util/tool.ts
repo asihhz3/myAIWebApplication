@@ -46,7 +46,7 @@ export class ResponseAnalyzer {
         if (!line.trim() || line.trim() === 'data: [DONE]') {
             return null;
         }
-
+        line = line.slice(6)
         if (this.is_recieve_large_data) {
             this.buffer.push(line)
             if (line.endsWith("}")) {
@@ -143,6 +143,16 @@ export function IdGenerator2() {
 
 export function GetMimeTypeForBase64(b64 : string) : string{
     return /(?<=data:image\/)(\w+)/.exec(b64)![0]
+}
+
+export function b64ToUtf8(b64 : string) : string{
+    var binaryString = window.atob(b64);
+    var len = binaryString.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return new TextDecoder("utf-8").decode(bytes)
 }
 
 export default {}

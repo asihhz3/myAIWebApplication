@@ -49,6 +49,8 @@ import SeedreamModelParamPanel from './param/SeedreamModelParamPanel.vue';
 import { writeLog } from '@/core/util/log';
 import TTSModelParamPanel from './param/TTSModelParamPanel.vue';
 import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
+import HappyHorseParamPanel from './param/HappyHorseParamPanel.vue';
+import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
 
     let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
@@ -90,6 +92,10 @@ import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
                             return "SeedreamModelParamPanel"
                         case ModelType.gpt_image2:
                             return "GPTImage2ParamPanel"
+                        case ModelType.qwen_image:
+                            return "QwenImageParamPanel"
+                        case ModelType.happy_horse:
+                            return "HappyHorseParamPanel"
                         case ModelType.mix:
                         default:
                             return "MixModelParamPanel"
@@ -140,7 +146,6 @@ import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
                     throw "no suitable api key"
                 }
                 if (user_message == null) {
-                    alert("message is empty")
                     return
                 }
                 this.dialog.quene.push(user_message)
@@ -185,7 +190,9 @@ import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
             "DialogueDisplay" : DialogueDisplay,
             "SeedreamModelParamPanel" : SeedreamModelParamPanel,
             "GPTImage2ParamPanel" : GPTImage2ParamPanel,
-            "TTSModelParamPanel" : TTSModelParamPanel
+            "TTSModelParamPanel" : TTSModelParamPanel,
+            "HappyHorseParamPanel" : HappyHorseParamPanel,
+            "QwenImageParamPanel" : QwenImageParamPanel,
         }
     }
 </script>
