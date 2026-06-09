@@ -8,6 +8,11 @@ declare module '*.vue' {
   export default component
 }
 
+declare module 'image-tools' {
+  export function pathToBase64(path :string) : Promise<string>
+  export function base64ToPath(b64 :string) : Promise<string>
+}
+
 // declare module 'uuid-js' {
 //   const uuid: {
 //     create(): any; // 根据实际API调整类型

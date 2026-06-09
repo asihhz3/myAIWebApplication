@@ -2,7 +2,7 @@
 <template>
     <div v-bind:class="(value as IDisplayValue).role">
         <div>
-            <p v-bind:hidden="is_edit_mode">{{ txt_content }}</p>
+            <div v-bind:hidden="is_edit_mode" v-html="txt_componet"></div>
             <textarea wrap="soft" v-model="edit_content" :hidden="!is_edit_mode" style="width: 90%;"></textarea>
         </div>
         <div id="content_images">
@@ -16,7 +16,7 @@
         </audio>
         <div>
             <input type="button" value="delete" @click="$emit('delete_message', value!.message_id)" />
-            <input type="button" value="edit" @click="switch_edit_mode" :hidden="txt_content.length == 0 || is_edit_mode"/>
+            <input type="button" value="edit" @click="switch_edit_mode" :hidden="txt_componet.length == 0 || is_edit_mode"/>
             <input type="button" value="cancle" @click="abandon_changes" :hidden="!is_edit_mode"/>
             <input type="button" value="save" @click="save_changes" :hidden="!is_edit_mode"/>
         </div>
@@ -25,11 +25,11 @@
 
 <script lang="ts">
     import { type IDisplayValue } from '@/core/util/display_type';
-    import { computed, watch } from 'vue';
     import { base64ToPath } from 'image-tools'
     import { publicResource } from '@/core/util/router';
     import Viewer from 'viewerjs';
     import { writeError } from '@/core/util/log';
+    import MarkdownIt from 'markdown-it'
     export default {
         data() {
             return {
@@ -40,12 +40,12 @@
             }
         },
         computed : {
-            txt_content() : string {
+            txt_componet() : string {
                 if (!this.value) {
                     return ""
                 }
                 if (typeof this.value.content == "string") {
-                    return this.value.content
+                    return new MarkdownIt().render(this.value.content) 
                 }
                 writeError("unexpected error: invaild content type")
                 return ""
