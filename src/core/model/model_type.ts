@@ -1221,8 +1221,13 @@ class OpenRouterAssistantMessage implements IAsyncMessage, ITextMessage, IBase64
                 finish_reason: string,
                 index: number,
                 message: {
-                    content: ORContent,
+                    content?: ORContent,
                     role: "assistant"
+                    images? : {
+                        image_url : {
+                            url : string
+                        }
+                    }[]
                 }
             }[],
             created: number,
@@ -1250,7 +1255,7 @@ class OpenRouterAssistantMessage implements IAsyncMessage, ITextMessage, IBase64
                     if (typeof msg.content == 'string') {
                         this.current_content.value = msg.content
                     }
-                    else {
+                    else if (msg.content) {
                         (msg.content as ORContentObject[]).forEach(
                             obj => {
                                 if (obj.text) {
@@ -1261,6 +1266,9 @@ class OpenRouterAssistantMessage implements IAsyncMessage, ITextMessage, IBase64
                                 }
                             }
                         )
+                    }
+                    if (msg.images) {
+                        msg.images.forEach(img => this.base64imgs.value.push(img.image_url.url))
                     }
                 }
                 else {
@@ -1360,7 +1368,7 @@ export class OpenRouterAPIAssistantStreamMessage implements IAsyncMessage, IBase
     serialize(): IMessageBody {
         return {
             role: this.role,
-            content: this.content,
+            content: unref(this.current_content),
             base64imgs: unref(this.base64imgs)
         }
     }
@@ -1509,7 +1517,7 @@ export class OpenRouterAPIVideoModel implements IModel {
             model: `${this.company_source}/${this.id}`,
             prompt: message_body.content,
             frame_images: message_body.base64imgs && message_body.base64imgs.length > 0
-                ? { type: 'image_url', image_url: message_body.base64imgs[0], frame_type: frame_type } : undefined,
+                ? [{ type: 'image_url', image_url: { url :message_body.base64imgs[0] }, frame_type: frame_type } ]: undefined,
             ...config
         })
         let requestOptions: RequestInit = {

@@ -84,6 +84,8 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     //     "gemini 3.5 flash", 
                     //     [or_chat_model]
                     // ),
+                    new OpenRouterAPIModel(ModelType.txt2img, "Recraft v4.1", "recraft-v4.1", [or_chat_model], 'recraft'),
+                    new OpenRouterAPIModel(ModelType.txt2img, "Recraft v4.1 Pro", "recraft-v4.1-pro", [or_chat_model], 'recraft'),
                     new AImageModel("DouBao Seedream 4.5", "doubao-seedream-4-5-251128", [ct_image_model], ModelType.seedream_image),
                     new AImageModel("DouBao Seedream 5", "doubao-seedream-5-0-260128", [ct_image_model], ModelType.seedream_image),
                     new GPTImageModel("GPT-Image 1.5", "gpt-image-1.5", [ct_image_model], ModelType.gpt_image2),
@@ -95,6 +97,8 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     new QwenImageModel("Wan2.6 t2i", "wan2.6-t2i", [aliyun_beijing_qwen_model]),
                     new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
                     new OpenRouterAPIVideoModel('Grok Imagine Video(OR)', 'grok-imagine-video', [or_video_model], 'x-ai'),
+                    new OpenRouterAPIVideoModel('Hailuo 2.3', 'hailuo-2.3', [or_video_model], 'minimax'),
+                    new OpenRouterAPIVideoModel('Kling v3.0 Standard', 'kling-v3.0-std', [or_video_model], 'kwaivgi'),
                     new HappyHorseVideoModel("Happyhorse 1.0 i2v", "happyhorse-1.0-i2v", [aliyun_beijing_happyhorse_model]),
                     new HappyHorseVideoModel("Happyhorse 1.0 t2v", "happyhorse-1.0-t2v", [aliyun_beijing_happyhorse_model]),
                     new HappyHorseVideoModel("Wan2.7 i2v", "wan2.7-i2v", [aliyun_beijing_happyhorse_model]),
