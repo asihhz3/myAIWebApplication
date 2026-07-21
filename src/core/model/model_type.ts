@@ -9,7 +9,8 @@ export enum ModelSourceType {
     openrouter = "openrouter",
     cometapi = "cometapi",
     miloraapi = "miloraapi",
-    aliyun = "aliyun"
+    aliyun = "aliyun",
+    bytedance = "bytedance"
 }
 
 export enum ModelType {
@@ -1054,6 +1055,127 @@ export class QwenImageModel implements IModel {
             .then(async response => {
                 if (response.ok) {
                     return new QwenImageAssiantMessage(response.json())
+                }
+                else {
+                    console.log(response)
+                    var msg = ""
+                    try {
+                        interface ErrorMsg {
+                            error: {
+                                message: string
+                            }
+                        }
+                        msg = (await response.json() as ErrorMsg).error.message
+                    }
+                    catch { }
+                    throw `response : ${response.status}\n${msg}`
+                }
+            }
+            ).catch(error => {
+                writeError(error.toString())
+                return null;
+            }
+            );
+    }
+}
+
+export class SeedDreamImageMessage implements IUrlIMGMessage {
+    id: string
+    role: "system" | "user" | "assistant" | "_invaild";
+    content: string
+    imgs_url: Ref<string[], string[]>
+    base64imgs: Ref<string[], string[]>
+    constructor(
+        json_promise : Promise<any>
+    ) {
+        this.id = IdGenerator2()
+        this.role = "assistant"
+        this.content = ""
+        this.imgs_url = ref([])
+        this.base64imgs = ref([])
+        interface SeedDreamResponse {
+            created?: number,
+            data: {
+                b64_json? : string,
+                url? : string
+            }[],
+            usage: {
+                generated_images: number
+                output_tokens: number,
+                total_tokens: number
+            }
+        }
+        json_promise.then(
+            json => {
+                const response = json as SeedDreamResponse
+                for (let data of response.data) {
+                    if (data.b64_json) {
+                        this.imgs_url.value.push(data.b64_json)
+                    }
+                    if (data.url) {
+                        this.imgs_url.value.push(data.url)
+                    }
+                }
+            }
+        )
+    }
+    serialize(): IMessageBody {
+        return {
+            role: this.role,
+            imgs_url: unref(this.imgs_url),
+            base64imgs: unref(this.base64imgs),
+            content: ""
+        }
+    }
+}
+
+export class SeedDreamImageModel implements IModel {
+    source: IModelSource[];
+    name: string;
+    type: ModelType;
+    id: string;
+
+    constructor(name: string, id: string, source: IModelSource[]) {
+        this.type = ModelType.mix
+        this.source = source
+        this.name = name
+        this.id = id
+    }
+
+    async sendRequest(api_key: string, current_dialog: IDialogue, source: IModelSource, config?: object): Promise<IMessage | IAsyncMessage | null> {
+        let msg = current_dialog.quene[current_dialog.quene.length - 1]
+        if (!current_dialog.quene || !msg) {
+            return Promise.reject("lack of prompt message")
+        }
+        const msg_body: IMessageBody = msg.serialize()
+        let imgs_url = undefined
+        if (msg_body.base64imgs) {
+            imgs_url = msg_body.base64imgs
+        }
+        else if (msg_body.imgs_url) {
+            imgs_url = msg_body.imgs_url
+        }
+        const body = {
+            model: this.id,
+            prompt : msg_body.content,
+            image : imgs_url,
+            ...config
+        }
+        const header = new Headers();
+        header.append("Authorization", `Bearer ${api_key}`);
+        header.append("Content-Type", "application/json");
+        header.append('Accept', '*/*')
+        header.append('Connection', ' keep-alive')
+        let requestOptions: RequestInit = {
+            method: 'POST',
+            headers: header,
+            body: JSON.stringify(body),
+            // redirect: 'follow'
+        }
+        return fetch(source.base_url, requestOptions)
+            .then(async response => {
+                if (response.ok) {
+                    return new SeedDreamImageMessage(response.json())
                 }
                 else {
                     console.log(response)

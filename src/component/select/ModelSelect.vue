@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts">
-import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType, MiloraTTSModel, GPTImageModel, QwenImageModel, HappyHorseVideoModel, OpenRouterAPIModel, OpenRouterAPIVideoModel } from '@/core/model/model_type';
+import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, type IModel, ModelType, MiloraTTSModel, GPTImageModel, QwenImageModel, HappyHorseVideoModel, OpenRouterAPIModel, OpenRouterAPIVideoModel, SeedDreamImageModel } from '@/core/model/model_type';
 
     const ct_chat_model = {
         type : ModelSourceType.cometapi,
@@ -36,6 +36,10 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
     const or_video_model = {
         type : ModelSourceType.openrouter,
         base_url : "/api/openrouter/api/v1/videos"
+    }
+    const seedream_image_model = {
+        type : ModelSourceType.bytedance,
+        base_url : "https://ark.cn-beijing.volces.com/api/v3/images/generations"
     }
     const aliyun_beijing_qwen_model = {
         type : ModelSourceType.aliyun,
@@ -95,6 +99,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     new QwenImageModel("Qwen Image 2.0", "qwen-image-2.0", [aliyun_beijing_qwen_model]),
                     new QwenImageModel("Qwen Image Max", "qwen-image-max", [aliyun_beijing_qwen_model]),
                     new QwenImageModel("Wan2.6 t2i", "wan2.6-t2i", [aliyun_beijing_qwen_model]),
+                    new SeedDreamImageModel("Seedream 5.0", "doubao-seedream-5-0-260128", [seedream_image_model]),
                     new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
                     new OpenRouterAPIVideoModel('Grok Imagine Video(OR)', 'grok-imagine-video', [or_video_model], 'x-ai'),
                     new OpenRouterAPIVideoModel('Hailuo 2.3', 'hailuo-2.3', [or_video_model], 'minimax'),

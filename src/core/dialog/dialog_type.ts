@@ -225,7 +225,7 @@ export class AssistantStreamMessage implements IAsyncMessage, IBase64IMGMessage 
     serialize(): IMessageBody {
         return {
             role : this.role,
-            content : this.content,
+            content : unref(this.current_content),
             base64imgs : unref(this.base64imgs)
         }
     }
