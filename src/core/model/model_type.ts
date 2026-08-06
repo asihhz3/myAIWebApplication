@@ -24,7 +24,7 @@ export enum ModelType {
     seedream_image,
     gpt_image2,
     qwen_image,
-    happy_horse
+    happy_horse,
 }
 
 export interface IModelSource {
@@ -1136,7 +1136,7 @@ export class SeedDreamImageModel implements IModel {
     id: string;
 
     constructor(name: string, id: string, source: IModelSource[]) {
-        this.type = ModelType.mix
+        this.type = ModelType.seedream_image
         this.source = source
         this.name = name
         this.id = id

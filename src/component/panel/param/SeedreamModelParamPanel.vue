@@ -11,15 +11,19 @@
             <span>
                 size
                 <select v-model="size_option">
-                    <option  value="1k">1k</option>
                     <option  value="2k">2k</option>
+                    <option  value="3k">3k</option>
                     <option  value="4k">4k</option>
                 </select>
             </span>
-            <span>
+            <!-- <span>
                 guidance_scale 
                 <input type="text" @change="checkGuidanceScale" v-model="guidance_scale"/>
-            </span>
+            </span> -->
+        </div>
+        <div>
+            Watermark 
+            <input type='checkbox' v-model="watermark"/>
         </div>
         <div>
         </div>
@@ -38,7 +42,6 @@
 
 <script lang="ts">
 import { SystemMessage, UserMixMessage, type IMessage } from '@/core/dialog/dialog_type';
-import type { IModelSource } from '@/core/model/model_type';
 import { writeError, writeLog } from '@/core/util/log';
 import { publicResource } from '@/core/util/router';
 import { base64ToPath } from 'image-tools';
@@ -49,8 +52,9 @@ import { base64ToPath } from 'image-tools';
                 user_input : "",
                 imgs_input : [] as string[],
                 imgs_preview : [] as string[],
-                size_option : "1k",
+                size_option : "2k",
                 guidance_scale : 3,
+                watermark : true,
                 ready : true
             }
         },
@@ -95,7 +99,8 @@ import { base64ToPath } from 'image-tools';
             createConfig() : any {
                 return {
                     size : this.size_option,
-                    guidance_scale : this.guidance_scale
+                    watermark : this.watermark
+                    // guidance_scale : this.guidance_scale
                 }
             },
             createMessage() : IMessage | null {
