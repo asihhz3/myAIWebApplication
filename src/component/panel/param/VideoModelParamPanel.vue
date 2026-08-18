@@ -1,16 +1,14 @@
 
 <template>
-    <div id = "video_model_param_main">
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
-        <br></br>
-        <div>
-            Config : 
-            <div>
-                aspectRatio
+    <div class="param-card" id="video_model_param_main">
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
+        <div class="card-title">Config</div>
+        <div class="row">
+            <div class="field">
+                <span class="label">aspectRatio</span>
                 <select v-model="aspect_ratio">
-                    <option value="shouldn't be defined">shouldn't be defined</option>
+                    <option value="shouldn't be defined">auto</option>
                     <option value="1:1">1:1</option>
                     <option value="4:3">4:3</option>
                     <option value="3:4">3:4</option>
@@ -18,20 +16,17 @@
                     <option value="9:16">9:16</option>
                 </select>
             </div>
-            <div>
-                duration 
+            <div class="field">
+                <span class="label">duration</span>
                 <input type="text" v-model="duration" @change="check_duration"/>
             </div>
         </div>
-        <span>
-            Image :
+        <div class="upload-row">
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
-            <input type="button" @click="selected_imgs_clear" value="clear"></input>
-        </span>
-        <div v-if="imgs_preview.length > 0">
-            preview:
-            <br></br>
-            <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
+            <button class="btn-ghost" @click="selected_imgs_clear">clear</button>
+        </div>
+        <div class="preview-grid" v-if="imgs_preview.length > 0">
+            <img class="img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
@@ -117,16 +112,3 @@ import { base64ToPath } from 'image-tools';
         },
     }
 </script>
-
-<style scoped>
-    #video_model_param_main {
-        border: 1px dotted aqua;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-    .img_preview {
-        width: 128px;
-        height: 128px;
-        object-fit: cover;
-    }
-</style>

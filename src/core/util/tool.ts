@@ -1,4 +1,5 @@
 import uuid from "uuid-js";
+import { writeError } from "./log";
 
 
 declare global {
@@ -46,7 +47,6 @@ export class ResponseAnalyzer {
         if (!line.trim() || line.trim() === 'data: [DONE]') {
             return null;
         }
-        line = line.slice(6)
         if (this.is_recieve_large_data) {
             this.buffer.push(line)
             if (line.endsWith("}")) {
@@ -68,7 +68,7 @@ export class ResponseAnalyzer {
                 try {
                     return JSON.parse(jsonStr);
                 } catch (error) {
-                    console.warn('JSON解析失败:', jsonStr, error);
+                    writeError(`JSON解析失败: ${jsonStr}\nerror:${error}`);
                     return null;
                 }
             }

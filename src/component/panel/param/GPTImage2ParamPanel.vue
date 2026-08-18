@@ -1,52 +1,41 @@
 
-
 <template>
-    <div id = "gptimage2_model_param_main">
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
-        <br></br>
-        Config : 
-        <div>
-            <span>
-                size
+    <div class="param-card" id="gptimage2_model_param_main">
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
+        <div class="card-title">Config</div>
+        <div class="row">
+            <div class="field">
+                <span class="label">size</span>
                 <select v-model="size_option">
-                    <option  value="1024x1024">1024x1024</option>
-                    <option  value="1536x1024">1536x1024</option>
-                    <option  value="1024x1536">1024x1536</option>
-                    <option  value="2048x2048">2048x2048</option>
-                    <option  value="2048x1152">2048x1152</option>
-                    <option  value="3840x2160">3840x2160</option>
-                    <option  value="2160x3840">2160x3840</option>
-
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="1536x1024">1536x1024</option>
+                    <option value="1024x1536">1024x1536</option>
+                    <option value="2048x2048">2048x2048</option>
+                    <option value="2048x1152">2048x1152</option>
+                    <option value="3840x2160">3840x2160</option>
+                    <option value="2160x3840">2160x3840</option>
                 </select>
-            </span>
-            <br></br>
-            <span>
-                quality
+            </div>
+            <div class="field">
+                <span class="label">quality</span>
                 <select v-model="ouput_quality">
-                    <option  value="low">low</option>
-                    <option  value="medium">medium</option>
-                    <option  value="high">high</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
                 </select>
-            </span>
-            <br></br>
-            <span>
-                guidance_scale 
+            </div>
+            <div class="field">
+                <span class="label">guidance scale</span>
                 <input type="text" @change="checkGuidanceScale" v-model="guidance_scale"/>
-            </span>
+            </div>
         </div>
-        <div>
-        </div>
-        <span>
-            Image :
+        <div class="upload-row">
             <input ref="img_input" accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
-            <input type="button" @click="selected_imgs_clear" value="clear"></input>
-        </span>
-        <div v-if="imgs_preview.length > 0">
-            preview:
-            <br></br>
-            <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
+            <button class="btn-ghost" @click="selected_imgs_clear">clear</button>
+        </div>
+        <div class="preview-grid" v-if="imgs_preview.length > 0">
+            <img class="img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
@@ -135,16 +124,3 @@ import { base64ToPath } from 'image-tools';
         }
     }
 </script>
-
-<style scoped>
-    #gptimage2_model_param_main {
-        border: 1px dotted aqua;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-    .img_preview {
-        width: 128px;
-        height: 128px;
-        object-fit: cover;
-    }
-</style>

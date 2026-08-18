@@ -1,10 +1,9 @@
 
 <template>
-    <div id = "tts_model_param_main">
-        Config
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
+    <div class="param-card" id="tts_model_param_main">
+        <div class="card-title">Config</div>
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
     </div>
 </template>
 
@@ -31,11 +30,3 @@ import { SystemMessage, UserTextMessage, type IMessage } from '@/core/dialog/dia
         },
     }
 </script>
-
-<style scoped>
-    #tts_model_param_main {
-        border: 1px dotted aquamarine;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-</style>

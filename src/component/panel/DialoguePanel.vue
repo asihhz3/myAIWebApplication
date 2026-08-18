@@ -1,35 +1,50 @@
 
 <template>
-    <h4>dialog : {{ dialog_id }}</h4>
-    <p class = "tips" v-if="is_new_dialog">this is a new dialog</p>
-    <p class = "tips" v-else>this is a history dialog</p>
-    <div>
-        User name:
-        <select v-model="user_selected_name">
-            <option class = "dialog" v-for="pair in user_list.list">{{ pair.name }}</option>
-        </select>
-        <br></br>
-        Model :
-        <ModelSelect @model-update="setModel"></ModelSelect>
-        <br></br>
-        Source:
-        <select v-model="model_source_selected">
-            <option class 
-            v-if="model_selected" 
-            v-for="source in source_list"
-            :value="source"
-            >{{ source.type }}</option>
-        </select>
-        <br></br>
-        <component v-if="param_selected" v-bind:is="param_selected" ref="param" v-bind:model_selected="model_selected!.id"></component>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="dialog-title">dialog · {{ dialog_id }}</div>
+            <span class="badge" :class="is_new_dialog ? 'badge-new' : 'badge-hist'">
+                {{ is_new_dialog ? 'new dialog' : 'history' }}
+            </span>
+        </div>
 
-        <button @click="systemOrder">System Order</button>
-        <button @click="communicate">Send</button>
-        <hr></hr>
-        <button @click="test_user">Test User</button>
-        <DialogueDisplay :current_dialog="dialog"/>
+        <div class="field">
+            <span class="label">User</span>
+            <select v-model="user_selected_name">
+                <option v-for="pair in user_list.list" :key="pair.name" :value="pair.name">{{ pair.name }}</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <span class="label">Model</span>
+            <ModelSelect @model-update="setModel"></ModelSelect>
+        </div>
+
+        <div class="field" v-if="model_selected">
+            <span class="label">Source</span>
+            <select v-model="model_source_selected">
+                <option
+                    v-if="model_selected"
+                    v-for="source in source_list"
+                    :key="source.type"
+                    :value="source"
+                >{{ source.type }}</option>
+            </select>
+        </div>
+
+        <component
+            v-if="param_selected"
+            v-bind:is="param_selected"
+            ref="param"
+            v-bind:model_selected="model_selected!.id"
+        ></component>
+
+        <div class="actions">
+            <button class="btn-accent" @click="communicate">Send</button>
+            <button class="btn-ghost" @click="systemOrder">System</button>
+            <button class="btn-ghost" @click="test_user">Test</button>
+        </div>
     </div>
-    <hr></hr>
 </template>
 
 <script lang="ts">
@@ -39,7 +54,6 @@
     import { computed, ref, type Ref } from 'vue';
     import ModelSelect  from '@/component/select/ModelSelect.vue'
     import LLMModelParamPanel from './param/LLMModelParamPanel.vue';
-import DialogueDisplay from '../display/DialogueDisplay.vue';
 import type { IParamPanel } from '@/core/util/component_type';
 import { type IModel,  type IModelSource,  ModelType } from '@/core/model/model_type';
 import MixModelParamPanel from './param/MixModelParamPanel.vue';
@@ -52,7 +66,6 @@ import GPTImage2ParamPanel from './param/GPTImage2ParamPanel.vue';
 import HappyHorseParamPanel from './param/HappyHorseParamPanel.vue';
 import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
 
-    let new_dialog : Ref<Dialogue | null> = ref(null)
     export default {
         data () {
             return {
@@ -60,20 +73,7 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
                 user_selected_name : null as string | null,
                 model_selected : null as IModel | null,
                 model_source_selected : null as IModelSource | null,
-                is_new_dialog : computed(() => new_dialog.value != null ),
-                dialog : computed(() => {
-                    if (client_dialog_history.hasHistory(this.dialog_id))
-                        return client_dialog_history.getHistory(this.dialog_id)!.dialog
-                    else {
-                        if (new_dialog.value == null) {
-                            new_dialog.value = new Dialogue(
-                                this.dialog_id,
-                                new SystemMessage("you are a helpful ai.")
-                            )
-                        }
-                        return new_dialog.value
-                    }
-                })
+                is_new_dialog : computed(() => !client_dialog_history.hasHistory(this.dialog_id)),
             }
         },
         computed : {
@@ -110,11 +110,13 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
                 if (!this.model_selected) {
                     return null
                 }
-                const a = this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
                 return this.model_selected.source.filter(_source => this.user_selected && this.user_selected.key_list.some(api => api.source_type == _source.type))
             }
         },
-        props : ["dialog_id"],
+        props : {
+            dialog_id : { type : String, required : true },
+            dialog : { type : Object as () => Dialogue, required : true }
+        },
         methods : {
             setModel(val : IModel | null) {
                 this.model_selected = val
@@ -138,7 +140,6 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
                     return
                 }
                 const user_message = (this.$refs.param as IParamPanel).createMessage()
-                // const source = (this.$refs.param as IParamPanel).getSource()
                 const user_config = (this.$refs.param as IParamPanel).createConfig()
                 const selected_api = this.user_selected.key_list.find(key_pair => key_pair.source_type == this.model_source_selected!.type)
                 if (!selected_api) {
@@ -187,7 +188,6 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
             "MixModelParamPanel" : MixModelParamPanel,
             "GeminiModelParamPanel" : GeminiModelParamPanel,
             "VideoModelParamPanel" : VideoModelParamPanel,
-            "DialogueDisplay" : DialogueDisplay,
             "SeedreamModelParamPanel" : SeedreamModelParamPanel,
             "GPTImage2ParamPanel" : GPTImage2ParamPanel,
             "TTSModelParamPanel" : TTSModelParamPanel,
@@ -197,23 +197,65 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
     }
 </script>
 
-<style>
-    .text_input {
-        overflow-y: auto;
-        height: 40px;
-        width: 90%;
-        margin: 8px 0px;
-        resize: vertical;
-    }
-</style>
-
 <style scoped>
-    .dialog {
-        margin: 10px 2px;
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
     }
-    .tips {
-        font-size: x-small;
-        color: gray;
+    .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+    }
+    .dialog-title {
+        font-size: 12px;
+        font-weight: 650;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .badge {
+        flex: none;
+        font-size: 11px;
+        font-weight: 650;
+        padding: 2px 10px;
+        border-radius: var(--radius-full);
+    }
+    .badge-new {
+        color: var(--accent-contrast);
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .badge-hist {
+        color: var(--info);
+        background: rgba(34, 211, 238, 0.12);
+    }
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin-bottom: var(--space-3);
+    }
+    .label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .actions {
+        display: flex;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+    }
+    .actions .btn-accent {
+        flex: 1;
     }
 </style>
-

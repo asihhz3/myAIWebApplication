@@ -1,24 +1,25 @@
 
 <template>
-    <div id = "llm_model_param_main">
-        Config
-        <div>
-            stream:
-            <span v-for="val in ['true', 'false']">
-                <input type="radio" name="stream" v-bind:value="val" v-model="stream">{{ val }}</input>
+    <div class="param-card" id="llm_model_param_main">
+        <div class="card-title">Config</div>
+        <div class="field">
+            <span class="label">stream</span>
+            <span class="pills">
+                <label v-for="val in ['true', 'false']">
+                    <input type="radio" name="stream" v-bind:value="val" v-model="stream">{{ val }}
+                </label>
             </span>
         </div>
-        <div>
-            temperature:
-            <input type="range" max="100" min="0" v-model="temperature_rate">{{ temperature_rate / 100 }}</input>
+        <div class="field">
+            <span class="label">temperature · {{ temperature_rate / 100 }}</span>
+            <input type="range" max="100" min="0" v-model="temperature_rate">
         </div>
-        <div>
-            top p:
-            <input type="range" max="100" min="0" v-model="top_p_rate">{{ top_p_rate / 100 }}</input>
+        <div class="field">
+            <span class="label">top p · {{ top_p_rate / 100 }}</span>
+            <input type="range" max="100" min="0" v-model="top_p_rate">
         </div>
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
     </div>
 </template>
 
@@ -51,11 +52,3 @@ import { SystemMessage, UserTextMessage, type IMessage } from '@/core/dialog/dia
         },
     }
 </script>
-
-<style scoped>
-    #llm_model_param_main {
-        border: 1px dotted aquamarine;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-</style>

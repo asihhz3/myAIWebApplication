@@ -1,7 +1,9 @@
 
 <template>
-    <div class = "container" id = "dialog_display">
-        <component v-for="msg in current_dialog!.quene" :key="msg.id" :is="displayMessage(msg)" @delete_message = "deleteMessage" :value="getMessageValue(msg)"></component>
+    <div class="chat-card" id="dialog_display" ref="chat_scroll">
+        <div class="chat-list">
+            <component v-for="msg in current_dialog!.quene" :key="msg.id" :is="displayMessage(msg)" @delete_message = "deleteMessage" :value="getMessageValue(msg)"></component>
+        </div>
     </div>
 </template>
 
@@ -9,17 +11,28 @@
     import { Dialogue, type IBase64IMGMessage, type IMessage, type IAsyncMessage, type ITextMessage, type IUrlIMGMessage, type IVideoMesasage, type IAudioMesasage } from "@/core/dialog/dialog_type";
     import ContentDisplay from "@/component/display/ContentDisplay.vue"
 import { type IDisplayValue } from "@/core/util/display_type";
-import { reactive, ref, toRef, type Ref } from "vue";
+import { reactive, toRef, type Ref } from "vue";
     export default {
         methods : {
             displayMessage(msg : IMessage) : string{
                 return "ContentDisplay"
+            },
+            scrollToBottom() {
+                const el = this.$refs.chat_scroll as HTMLElement | undefined
+                if (!el) {
+                    return
+                }
+                const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+                if (nearBottom) {
+                    el.scrollTop = el.scrollHeight
+                }
             },
             getMessageValue(msg : IMessage) : IDisplayValue{
                 let value = {
                     message_id : msg.id,
                     role : msg.role,
                     content : "" as string | Ref<string>,
+                    streaming : false as boolean,
                     base64imgs : undefined as Ref<string[]> | undefined,
                     imgs_url : undefined as Ref<string[]> | undefined,
                     video_url : undefined as Ref<string> | undefined,
@@ -27,6 +40,7 @@ import { reactive, ref, toRef, type Ref } from "vue";
                 }
                 if ("current_content" in msg && "finish_reason" in msg) {
                     value.content = toRef((msg as IAsyncMessage), "current_content")
+                    value.streaming = (msg as IAsyncMessage).finish_reason == null
                 }
                 else if("content" in msg) {
                     value.content = toRef((msg as ITextMessage), "content")
@@ -52,25 +66,41 @@ import { reactive, ref, toRef, type Ref } from "vue";
         props : {
             current_dialog : Dialogue
         },
+        mounted() {
+            this.scrollToBottom()
+        },
+        updated() {
+            this.scrollToBottom()
+        },
         components : {
             "ContentDisplay" : ContentDisplay
         },
     }
 </script>
 <style scoped>
-#dialog_display {
+.chat-card {
     width: 100%;
-    min-height: 200px;
-    height: 600px;
+    height: calc(100vh - 96px);
     overflow-y: auto;
-    position: relative;
-    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
     box-sizing: border-box;
+    scroll-behavior: smooth;
 }
 
-#dialog_display:after {
-    content: "";
-    display: table;
-    clear: both;
+.chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+@media (max-width: 960px) {
+    .chat-card {
+        height: 60vh;
+    }
 }
 </style>

@@ -1,61 +1,60 @@
 
-
 <template>
-    <div id = "gemini_model_param_main">
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
-        <br></br>
-        Config : 
-        <div>
-            <span>
-                aspectRatio
+    <div class="param-card" id="gemini_model_param_main">
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
+        <div class="card-title">Config</div>
+        <div class="row">
+            <div class="field">
+                <span class="label">aspectRatio</span>
                 <select v-model="aspect_ratio_option">
-                    <option  value="1:1">1:1</option>
-                    <option  value="2:3">2:3</option>
-                    <option  value="3:2">3:2</option>
-                    <option  value="3:4">3:4</option>
-                    <option  value="4:3">4:3</option>
-                    <option  value="16:9">16:9</option>
-                    <option  value="9:16">9:16</option>
+                    <option value="1:1">1:1</option>
+                    <option value="2:3">2:3</option>
+                    <option value="3:2">3:2</option>
+                    <option value="3:4">3:4</option>
+                    <option value="4:3">4:3</option>
+                    <option value="16:9">16:9</option>
+                    <option value="9:16">9:16</option>
                 </select>
-            </span>
-            <span>
-                size
+            </div>
+            <div class="field">
+                <span class="label">size</span>
                 <select v-model="size_option">
-                    <option  value="1k">1k</option>
-                    <option  value="2k">2k</option>
-                    <option  value="4k">4k</option>
+                    <option value="1k">1k</option>
+                    <option value="2k">2k</option>
+                    <option value="4k">4k</option>
                 </select>
-            </span>
-            <div v-if="multi_modal_enable">
-                ouput: 
-                <span>
-                    text
+            </div>
+        </div>
+        <div class="field" v-if="multi_modal_enable">
+            <span class="label">output</span>
+            <span class="row">
+                <label class="switch">
                     <input type="checkbox" value="TEXT" @change="set_ouput_option" checked />
-                </span>
-                <span>
-                    image
+                    <span class="track"></span>
+                    text
+                </label>
+                <label class="switch">
                     <input type="checkbox" value="IMAGE" @change="set_ouput_option" checked />
-                </span>
-            </div>
-            <div>
-                tool
-                <br></br>
-                <input type="checkbox" value="google_search" @change="set_tools_option">Google Search</input>
-            </div>
+                    <span class="track"></span>
+                    image
+                </label>
+            </span>
         </div>
-        <div>
+        <div class="field">
+            <span class="label">tool</span>
+            <label class="switch">
+                <input type="checkbox" value="google_search" @change="set_tools_option">
+                <span class="track"></span>
+                Google Search
+            </label>
         </div>
-        <span>
-            Image :
+        <div class="upload-row">
             <input multiple ref="img_input" accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
-            <input type="button" @click="selected_imgs_clear" value="clear"></input>
-        </span>
-        <div v-if="imgs_preview.length > 0">
-            preview:
-            <br></br>
-            <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
+            <button class="btn-ghost" @click="selected_imgs_clear">clear</button>
+        </div>
+        <div class="preview-grid" v-if="imgs_preview.length > 0">
+            <img class="img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
@@ -187,16 +186,3 @@ import { computed } from 'vue';
         props : ["model_selected"]
     }
 </script>
-
-<style scoped>
-    #gemini_model_param_main {
-        border: 1px dotted aqua;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-    .img_preview {
-        width: 128px;
-        height: 128px;
-        object-fit: cover;
-    }
-</style>

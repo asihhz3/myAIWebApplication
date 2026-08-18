@@ -4,6 +4,7 @@
         v-model="selected"  
         @change="$emit('model-update', selected)"
     >
+        <option value="" disabled>choose a model…</option>
         <option v-for="api in model_api_list" v-bind:value="api">{{ api.name }}</option>
     </select>
 </template>
@@ -100,6 +101,7 @@ import { ModelSourceType, AImageModel, GeminiModel, LLMModel, XAiVideoModel, typ
                     new QwenImageModel("Qwen Image Max", "qwen-image-max", [aliyun_beijing_qwen_model]),
                     new QwenImageModel("Wan2.6 t2i", "wan2.6-t2i", [aliyun_beijing_qwen_model]),
                     new SeedDreamImageModel("Seedream 5.0", "doubao-seedream-5-0-260128", [seedream_image_model]),
+                    new SeedDreamImageModel("Seedream 5.0 Pro", "doubao-seedream-5-0-pro-260628", [seedream_image_model]),
                     new XAiVideoModel("Grok Imagine Video", "grok-imagine-video", [ct_grok_video_model]),
                     new OpenRouterAPIVideoModel('Grok Imagine Video(OR)', 'grok-imagine-video', [or_video_model], 'x-ai'),
                     new OpenRouterAPIVideoModel('Hailuo 2.3', 'hailuo-2.3', [or_video_model], 'minimax'),

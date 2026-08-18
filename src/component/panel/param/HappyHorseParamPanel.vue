@@ -1,39 +1,37 @@
 
 <template>
-    <div id = "happy_horse_param_main">
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
-        <br></br>
-        <div>
-            Config : 
-            <div>
-                Resolution
+    <div class="param-card" id="happy_horse_param_main">
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
+        <div class="card-title">Config</div>
+        <div class="row">
+            <div class="field">
+                <span class="label">resolution</span>
                 <select v-model="resolution">
                     <option value="720P">720P</option>
                     <option value="1080P">1080P</option>
                 </select>
             </div>
-            <div>
-                Duration 
+            <div class="field">
+                <span class="label">duration</span>
                 <input type="text" v-model="duration" @change="check_duration"/>
             </div>
-
-            <div>
-                Watermark 
-                <input type='checkbox' v-model="watermark"/>
+            <div class="field">
+                <span class="label">watermark</span>
+                <label class="switch">
+                    <input type="checkbox" v-model="watermark"/>
+                    <span class="track"></span>
+                </label>
             </div>
         </div>
-        <div v-if="model_selected && model_selected.endsWith('i2v')">
-            <span>
-                Image :
+        <div class="field" v-if="model_selected && model_selected.endsWith('i2v')">
+            <span class="label">Image</span>
+            <div class="upload-row">
                 <input accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
-                <input type="button" @click="selected_imgs_clear" value="clear"></input>
-            </span>
-            <div v-if="imgs_preview.length > 0">
-                preview:
-                <br></br>
-                <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg" ></img>
+                <button class="btn-ghost" @click="selected_imgs_clear">clear</button>
+            </div>
+            <div class="preview-grid" v-if="imgs_preview.length > 0">
+                <img class="img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg" ></img>
             </div>
         </div>
     </div>
@@ -131,16 +129,3 @@ import { base64ToPath } from 'image-tools';
         }
     }
 </script>
-
-<style scoped>
-    #happy_horse_param_main {
-        border: 1px dotted aqua;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-    .img_preview {
-        width: 128px;
-        height: 128px;
-        object-fit: cover;
-    }
-</style>

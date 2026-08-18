@@ -4,6 +4,7 @@ export interface IDisplayValue {
     message_id : string
     content : string
     role : "system" | "user" | "assistant" | "_invaild"
+    streaming? : boolean
     base64imgs? : string[]
     imgs_url? : string[]
     video_url? : string

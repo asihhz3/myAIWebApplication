@@ -1,41 +1,37 @@
 
-
 <template>
-    <div id = "sdream_model_param_main">
-        Input :
-        <br></br>
-        <textarea class="text_input" v-model="user_input" >{{ user_input }}</textarea>
-        <br></br>
-        Config : 
-        <div>
-            <span>
-                size
+    <div class="param-card" id="sdream_model_param_main">
+        <div class="card-title">Input</div>
+        <textarea class="text_input" v-model="user_input"></textarea>
+        <div class="card-title">Config</div>
+        <div class="row">
+            <div class="field">
+                <span class="label">size</span>
                 <select v-model="size_option">
-                    <option  value="2k">2k</option>
-                    <option  value="3k">3k</option>
-                    <option  value="4k">4k</option>
+                    <option value="2k">2k</option>
+                    <option value="3k">3k</option>
+                    <option value="4k">4k</option>
                 </select>
-            </span>
-            <!-- <span>
-                guidance_scale 
-                <input type="text" @change="checkGuidanceScale" v-model="guidance_scale"/>
-            </span> -->
+            </div>
+            <div class="field">
+                <span class="label">watermark</span>
+                <label class="switch">
+                    <input type="checkbox" v-model="watermark"/>
+                    <span class="track"></span>
+                </label>
+                <span class="label">background</span>
+                <label class="switch">
+                    <input type="checkbox" v-model="background"/>
+                    <span class="track"></span>
+                </label>
+            </div>
         </div>
-        <div>
-            Watermark 
-            <input type='checkbox' v-model="watermark"/>
-        </div>
-        <div>
-        </div>
-        <span>
-            Image :
+        <div class="upload-row">
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
-            <input type="button" @click="selected_imgs_clear" value="clear"></input>
-        </span>
-        <div v-if="imgs_preview.length > 0">
-            preview:
-            <br></br>
-            <img class = "img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
+            <button class="btn-ghost" @click="selected_imgs_clear">clear</button>
+        </div>
+        <div class="preview-grid" v-if="imgs_preview.length > 0">
+            <img class="img_preview" v-for="bimg in imgs_preview" v-bind:src="bimg"></img>
         </div>
     </div>
 </template>
@@ -55,6 +51,7 @@ import { base64ToPath } from 'image-tools';
                 size_option : "2k",
                 guidance_scale : 3,
                 watermark : true,
+                background : true,
                 ready : true
             }
         },
@@ -99,7 +96,8 @@ import { base64ToPath } from 'image-tools';
             createConfig() : any {
                 return {
                     size : this.size_option,
-                    watermark : this.watermark
+                    watermark : this.watermark,
+                    background : this.background ? "opaque" : "transparent"
                     // guidance_scale : this.guidance_scale
                 }
             },
@@ -123,16 +121,3 @@ import { base64ToPath } from 'image-tools';
         },
     }
 </script>
-
-<style scoped>
-    #sdream_model_param_main {
-        border: 1px dotted aqua;
-        margin: 20px 10px;
-        padding: 2% 1%;
-    }
-    .img_preview {
-        width: 128px;
-        height: 128px;
-        object-fit: cover;
-    }
-</style>
