@@ -1,7 +1,7 @@
 import { reactive, ref, toRef, unref, type Ref } from "vue";
-import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage, type IAudioMesasage as IAudioMessage } from "../dialog/dialog_type";
+import { type IDialogue, type IMessage, type IMessageBody, type IAsyncMessage, type IBase64IMGMessage, type ITextMessage, type IUrlIMGMessage, AssistantStreamMessage, AssistantTextMessage, type IVideoMesasage, type IAudioMesasage as IAudioMessage, serializeMessage } from "../dialog/dialog_type";
 import type { IImage } from "../util/assets_type";
-import { GetMimeTypeForBase64, IdGenerator2, ResponseAnalyzer } from "../util/tool";
+import { GetMimeTypeForBase64, IdGenerator2, ResponseAnalyzer, strIsRole } from "../util/tool";
 import { content, writeError, writeLog } from "../util/log";
 import uuid from "uuid-js";
 
@@ -70,7 +70,7 @@ export class LLMModel implements IModel {
         let body = JSON.stringify({
             model: this.id,
             ...config,
-            messages: current_dialog.quene.flatMap(msg => msg.serialize())
+            messages: current_dialog.quene.flatMap(msg => serializeMessage(msg))
         })
         let requestOptions: RequestInit = {
             method: 'POST',
@@ -106,6 +106,7 @@ export class LLMModel implements IModel {
     }
 
 }
+
 
 export class AssistantVideoMessage implements IVideoMesasage {
     id: string
@@ -156,7 +157,7 @@ export class XAiVideoModel implements IModel {
         header.append("Content-Type", "application/json");
         header.append('Accept', '*/*')
         header.append('Connection', ' keep-alive')
-        const message_body = current_dialog.quene[current_dialog.quene.length - 1]!.serialize()
+        const message_body = serializeMessage(current_dialog.quene[current_dialog.quene.length - 1]!)
         let body = JSON.stringify({
             model: this.id,
             prompt: message_body.content,
@@ -454,7 +455,7 @@ export class GeminiModel implements IModel {
 
     protected createMsgBody(current_dialog: IDialogue, config?: object) {
         return JSON.stringify({
-            contents: current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+            contents: current_dialog.quene.flatMap(msg => mBodyToGmBody(serializeMessage(msg))),
             generationConfig: config
         })
     }
@@ -471,7 +472,7 @@ export class GeminiModel implements IModel {
         header.append('Accept', '*/*')
         header.append('Connection', ' keep-alive')
         let body = JSON.stringify({
-            contents: current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+            contents: current_dialog.quene.flatMap(msg => mBodyToGmBody(serializeMessage(msg))),
             ...config
         })
         const start_time = Date.now();
@@ -517,7 +518,7 @@ export class GeminiModel implements IModel {
 //     protected createMsgBody(current_dialog : IDialogue, config?: object) {
 //         return JSON.stringify({
 //             model : this.id,
-//             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(msg.serialize())),
+//             contents : current_dialog.quene.flatMap(msg => mBodyToGmBody(serializeMessage(msg))),
 //             config : config
 //         })
 //     }
@@ -609,33 +610,6 @@ async function mBodyToGPTImgEditBody(msg: IMessageBody, model: AImageModel, conf
     return target_body
 }
 
-
-// export class UserAImageMessage implements IMessage{
-//     role: "system" | "user" | "assistant" | "_invaild"
-//     content : string
-//     base64imgs : string[] | undefined
-//     size? : string
-//     watermark?: boolean
-//     sequential_image_generation?: string
-//     sequential_image_generation_options? : {
-//         max_images: number,
-//     }
-//     constructor (
-//         content : string,
-//         base64imgs : string[] | undefined
-//     ) {
-//         this.role = "user"
-//         this.content = content
-//         this.base64imgs = base64imgs
-//     }
-//     serialize(): IMessageBody {
-//         return {
-//             ...this
-//         }
-//     }
-
-// }
-
 export class AssistantAImageMessage implements IUrlIMGMessage {
     id: string
     role: "system" | "user" | "assistant" | "_invaild";
@@ -712,7 +686,7 @@ export class AImageModel implements IModel {
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        let msg_body = mBodyToImgBody(msg.serialize(), this, config)
+        let msg_body = mBodyToImgBody(serializeMessage(msg), this, config)
         if (!msg_body) {
             return Promise.reject("failed to analyzed message")
         }
@@ -805,11 +779,11 @@ export class GPTImageModel implements IModel {
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        const msg_body: IMessageBody = msg.serialize()
+        const msg_body: IMessageBody = serializeMessage(msg)
         let body: FormData | string | null = null
         const is_edit = msg_body.base64imgs && msg_body.base64imgs.length > 0
         if (is_edit) {
-            body = await mBodyToGPTImgEditBody(msg.serialize(), this, config)
+            body = await mBodyToGPTImgEditBody(serializeMessage(msg), this, config)
         }
         else {
             body = JSON.stringify(mBodyToImgBody(msg_body, this, config))
@@ -907,7 +881,7 @@ export class MiloraTTSModel implements IModel {
         header.append("Content-Type", "application/json");
         let body = JSON.stringify({
             ...config,
-            text: current_dialog.quene[0]!.serialize()!.content
+            text: serializeMessage(current_dialog.quene[0]!).content
         })
         let requestOptions: RequestInit = {
             method: 'POST',
@@ -1030,7 +1004,7 @@ export class QwenImageModel implements IModel {
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        const msg_body: IMessageBody = msg.serialize()
+        const msg_body: IMessageBody = serializeMessage(msg)
         const body = {
             model: this.id,
             input: {
@@ -1147,7 +1121,7 @@ export class SeedDreamImageModel implements IModel {
         if (!current_dialog.quene || !msg) {
             return Promise.reject("lack of prompt message")
         }
-        const msg_body: IMessageBody = msg.serialize()
+        const msg_body: IMessageBody = serializeMessage(msg)
         let imgs_url = undefined
         if (msg_body.base64imgs) {
             imgs_url = msg_body.base64imgs
@@ -1224,7 +1198,7 @@ export class HappyHorseVideoModel implements IModel {
         header.append('Accept', '*/*')
         header.append('Connection', ' keep-alive')
         header.append('X-DashScope-Async', 'enable')
-        const message_body = current_dialog.quene[current_dialog.quene.length - 1]!.serialize()
+        const message_body = serializeMessage(current_dialog.quene[current_dialog.quene.length - 1]!)
         let body = JSON.stringify({
             model: this.id,
             input: {
@@ -1561,7 +1535,7 @@ export class OpenRouterAPIModel implements IModel {
         header.append('Connection', ' keep-alive')
         let body = JSON.stringify({
             model: `${this.company_source}/${this.id}`,
-            messages: current_dialog.quene.flatMap(msg => this.mBodyToOrBody(msg.serialize())),
+            messages: current_dialog.quene.flatMap(msg => this.mBodyToOrBody(serializeMessage(msg))),
             ...config
         })
         const start_time = Date.now();
@@ -1633,7 +1607,7 @@ export class OpenRouterAPIVideoModel implements IModel {
         header.append("Authorization", `Bearer ${api_key}`);
         header.append("Content-Type", "application/json");
         header.append('Connection', ' keep-alive')
-        const message_body = current_dialog.quene[current_dialog.quene.length - 1]!.serialize()
+        const message_body = serializeMessage(current_dialog.quene[current_dialog.quene.length - 1]!)
         const frame_type = config && 'frame_type' in config ? config.frame_type : 'first_frame'
         let body = JSON.stringify({
             model: `${this.company_source}/${this.id}`,

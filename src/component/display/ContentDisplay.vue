@@ -126,6 +126,7 @@
             is_streaming() {
                 if (!this.is_streaming) {
                     this.refreshGallery()
+                    this.$emit('message_updated')
                 }
             }
         },
@@ -162,6 +163,7 @@
                     this.value.content = this.edit_content
                 }
                 this.is_edit_mode = false
+                this.$emit('message_edited')
             },
         },
         props : {

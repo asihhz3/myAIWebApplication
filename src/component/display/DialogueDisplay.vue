@@ -2,7 +2,7 @@
 <template>
     <div class="chat-card" id="dialog_display" ref="chat_scroll">
         <div class="chat-list">
-            <component v-for="msg in current_dialog!.quene" :key="msg.id" :is="displayMessage(msg)" @delete_message = "deleteMessage" :value="getMessageValue(msg)"></component>
+            <component v-for="msg in current_dialog!.quene" :key="msg.id" :is="displayMessage(msg)" @delete_message = "deleteMessage" @message_edited="onMessageEdited" @message_updated="onMessageUpdated" :value="getMessageValue(msg)"></component>
         </div>
     </div>
 </template>
@@ -11,6 +11,7 @@
     import { Dialogue, type IBase64IMGMessage, type IMessage, type IAsyncMessage, type ITextMessage, type IUrlIMGMessage, type IVideoMesasage, type IAudioMesasage } from "@/core/dialog/dialog_type";
     import ContentDisplay from "@/component/display/ContentDisplay.vue"
 import { type IDisplayValue } from "@/core/util/display_type";
+import { client_dialog_history } from "@/core/dialog/dialog_history";
 import { reactive, toRef, type Ref } from "vue";
     export default {
         methods : {
@@ -61,10 +62,17 @@ import { reactive, toRef, type Ref } from "vue";
             },
             deleteMessage(msg_id : string) {
                 this.current_dialog!.quene = this.current_dialog!.quene.filter(msg => msg.id != msg_id)
+                client_dialog_history.saveHistory(this.current_dialog!)
+            },
+            onMessageEdited() {
+                client_dialog_history.saveHistory(this.current_dialog!)
+            },
+            onMessageUpdated() {
+                client_dialog_history.saveHistory(this.current_dialog!)
             },
         },
         props : {
-            current_dialog : Dialogue
+            current_dialog : Object as () => Dialogue
         },
         mounted() {
             this.scrollToBottom()

@@ -68,6 +68,32 @@ export function serializeTextMessage(msg : ITextMessage) {
         },
     )
 }
+
+export function serializeMessage(msg : IMessage | IMessageBody | any) : IMessageBody {
+    if (msg && typeof msg.serialize === "function") {
+        return msg.serialize()
+    }
+    const body : IMessageBody = {
+        role : (msg?.role as IMessageBody["role"]) ?? "_invaild",
+        content : typeof msg?.content == "string" ? msg.content : ""
+    }
+    if (Array.isArray(msg?.base64imgs)) {
+        body.base64imgs = msg.base64imgs
+    }
+    if (Array.isArray(msg?.imgs_url)) {
+        body.imgs_url = msg.imgs_url
+    }
+    if (typeof msg?.video_url == "string") {
+        body.video = msg.video_url
+    }
+    if (typeof msg?.audio_url == "string") {
+        body.audio = msg.audio_url
+    }
+    if (Array.isArray(msg?.tool_calls)) {
+        body.tool_calls = msg.tool_calls
+    }
+    return body
+}
 function parseSSEData(line : string) : any | null{
 
   // 过滤空行和 [DONE] 标记
@@ -129,7 +155,7 @@ export class UserMixMessage extends UserTextMessage implements IBase64IMGMessage
     base64imgs : Ref<string[]>
     constructor(content : string, imgs : string[] = []) {
         super(content)
-        this.base64imgs = ref(imgs)
+        this.base64imgs = ref([...imgs])
     }
 
     serialize(): IMessageBody {
@@ -159,6 +185,36 @@ export class SystemMessage implements ITextMessage {
     }
 }
 
+export class HistoryMessage implements ITextMessage, IUrlIMGMessage {
+    id: string;
+    body : IMessageBody;
+    public get content() : string {
+        return this.content
+    }
+    public set content(val) {
+        this.body.content = val
+    }
+    public get imgs_url() : Ref<string[]> {
+        return ref(this.imgs_url)
+    }
+    public set imgs_url(val) {
+        this.body.imgs_url = unref(val)
+    }
+    public get role() : "system" | "user" | "assistant" | "_invaild" {
+        return this.role
+    }
+    public set role(val) {
+        this.body.role = val
+    }
+    constructor(msg_id : string, body : IMessageBody) {
+        this.id = msg_id
+        this.body = body 
+    }
+    serialize(): IMessageBody {
+        throw this.body;
+    }
+}
+
 export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
     id : string
     role : "system" | "user" | "assistant" | "_invaild"
@@ -179,7 +235,7 @@ export class AssistantTextMessage implements ITextMessage, IAsyncMessage {
     serialize(): IMessageBody {
         return {
             role : this.role,
-            content : this.content
+            content : this.current_content.value
         } as IMessageBody
     }
 

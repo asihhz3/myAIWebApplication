@@ -150,10 +150,12 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
                     return
                 }
                 this.dialog.quene.push(user_message)
+                client_dialog_history.saveHistory(this.dialog, this.user_selected_name ?? undefined, this.model_selected?.name)
                 this.model_selected.sendRequest(selected_api.key, this.dialog, this.model_source_selected, user_config).then(
                     msg => {
                         if (msg) {
                             this.dialog.quene.push(msg)
+                            client_dialog_history.saveHistory(this.dialog, this.user_selected_name ?? undefined, this.model_selected?.name)
                         }
                     }
                 ).finally(
@@ -175,11 +177,13 @@ import QwenImageParamPanel from './param/QwenImageParamPanel.vue';
                     return
                 }
                 this.dialog.quene.push(user_message)
+                client_dialog_history.saveHistory(this.dialog, this.user_selected_name ?? undefined, this.model_selected?.name)
             },
 
             systemOrder() {
                 let system = (this.$refs.param as IParamPanel).createSystemMessage()
                 this.dialog.quene.push(system)
+                client_dialog_history.saveHistory(this.dialog, this.user_selected_name ?? undefined, this.model_selected?.name)
             }
         },
         components : {

@@ -28,6 +28,10 @@ export enum ReaderResultEnum {
     error
 }
 
+export function strIsRole(role_str : string) : boolean{
+    return ["system", "user", "assistant"].includes(role_str)
+}
+
 export class ResponseAnalyzer {
     decoder : TextDecoder
     reader : ReadableStreamDefaultReader<Uint8Array<ArrayBuffer>>

@@ -25,6 +25,13 @@
                     <span class="track"></span>
                 </label>
             </div>
+            <div class="field">
+                <span class="label">format</span>
+                <select v-model="output_format">
+                    <option value="jpeg">jpeg</option>
+                    <option value="png">png</option>
+                </select>
+            </div>
         </div>
         <div class="upload-row">
             <input multiple accept="image/png, image/jpeg" type="file" @change="imgs_select"></input>
@@ -52,6 +59,7 @@ import { base64ToPath } from 'image-tools';
                 guidance_scale : 3,
                 watermark : true,
                 background : true,
+                output_format : 'jpeg',
                 ready : true
             }
         },

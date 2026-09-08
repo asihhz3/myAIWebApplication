@@ -8,7 +8,7 @@ import Log from './Log.vue';
   <header class="topbar">
     <RouterLink to="/" class="brand">
       <span class="brand-mark">🍌</span>
-      <span class="brand-name">nano·banana</span>
+      <span class="brand-name">nano·banana·pie</span>
     </RouterLink>
     <nav class="navigation">
       <RouterLink to="/" class="nav-link">Generate</RouterLink>
