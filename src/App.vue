@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { RouterLink } from 'vue-router';
 import Log from './Log.vue';
+import TopUserManager from './component/manager/user/TopUserManager.vue';
 
 </script>
 
@@ -10,10 +11,13 @@ import Log from './Log.vue';
       <span class="brand-mark">🍌</span>
       <span class="brand-name">nano·banana·pie</span>
     </RouterLink>
-    <nav class="navigation">
-      <RouterLink to="/" class="nav-link">Generate</RouterLink>
-      <RouterLink to="/identify" class="nav-link">Identify</RouterLink>
-    </nav>
+    <div class="nav-container">
+        <nav class="navigation">
+        <RouterLink to="/" class="nav-link">Generate</RouterLink>
+        <RouterLink to="/identify" class="nav-link">Identify</RouterLink>
+        </nav>
+        <TopUserManager></TopUserManager>
+    </div>
   </header>
   <main class="main">
     <RouterView></RouterView>
@@ -59,6 +63,10 @@ import Log from './Log.vue';
     .navigation {
         display: inline-flex;
         gap: 0.25rem;
+    }
+    .nav-container {
+        display: inline-flex;
+        align-items: center;
     }
     .nav-link {
         color: var(--text-secondary);

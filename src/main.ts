@@ -1,5 +1,5 @@
 import 'viewerjs/dist/viewer.css'
-import '@/assets/design.css'
+import '@/assets/styles/index.css'
 import { createApp } from 'vue'
 
 import App from './App.vue'

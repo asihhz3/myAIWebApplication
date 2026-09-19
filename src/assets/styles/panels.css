@@ -1,0 +1,44 @@
+/* ---------- 参数面板专用 ---------- */
+
+@layer panels {
+    .param-card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--space-3);
+        margin: var(--space-3) 0;
+    }
+
+    .param-card .card-title {
+        margin-bottom: var(--space-2);
+    }
+
+    .text_input {
+        overflow-y: auto;
+        width: 100%;
+        min-height: 72px;
+        resize: vertical;
+        margin: var(--space-1) 0 var(--space-2);
+    }
+
+    details.summary-card {
+        margin-top: var(--space-2);
+        border-top: 1px dashed var(--border);
+        padding-top: var(--space-2);
+    }
+
+    details.summary-card > summary {
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        user-select: none;
+        transition: color var(--transition);
+    }
+
+    details.summary-card > summary:hover {
+        color: var(--accent);
+    }
+}

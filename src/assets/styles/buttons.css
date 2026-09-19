@@ -1,0 +1,75 @@
+/* ---------- 按钮：原生 + 变体 ---------- */
+
+@layer buttons {
+    button,
+    input[type="button"],
+    input[type="submit"] {
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 7px 14px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 550;
+        cursor: pointer;
+        transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition), color var(--transition);
+    }
+
+    button:hover,
+    input[type="button"]:hover,
+    input[type="submit"]:hover {
+        background: var(--surface-3);
+        border-color: var(--border-strong);
+    }
+
+    button:active,
+    input[type="button"]:active,
+    input[type="submit"]:active {
+        transform: translateY(1px);
+    }
+
+    button:disabled,
+    input[type="button"]:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-accent {
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong)) !important;
+        color: var(--accent-contrast) !important;
+        border: none !important;
+        font-weight: 650;
+        box-shadow: var(--shadow-accent);
+    }
+
+    .btn-accent:hover {
+        filter: brightness(1.08);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong)) !important;
+    }
+
+    .btn-danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-color: rgba(251, 113, 133, 0.35);
+    }
+
+    .btn-danger:hover {
+        background: var(--danger);
+        color: #1a0b0e;
+        border-color: var(--danger);
+        box-shadow: 0 6px 18px var(--danger-glow);
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border-color: transparent;
+        color: var(--text-secondary);
+    }
+
+    .btn-ghost:hover {
+        background: var(--surface-2);
+        color: var(--text);
+        border-color: transparent;
+    }
+}
